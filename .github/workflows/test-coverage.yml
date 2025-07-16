@@ -40,4 +40,4 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: sgn07124/InsightPrep
-        file: ./build/reports/jacoco/test/jacocoTestReport.xml
+        files: ./build/reports/jacoco/test/jacocoTestReport.xml
