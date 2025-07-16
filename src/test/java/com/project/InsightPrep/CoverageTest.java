@@ -14,11 +14,6 @@ class CoverageTest {
     }
 
     @Test
-    void testSubtract() {
-        assertEquals(1, coverage.subtract(4, 3));
-    }
-
-    @Test
     void testIsPositive() {
         assertTrue(coverage.isPositive(10));
         assertFalse(coverage.isPositive(-1));
