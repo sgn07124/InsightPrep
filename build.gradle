@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.4.7'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.project'
@@ -23,6 +24,10 @@ repositories {
 	mavenCentral()
 }
 
+jacoco {
+	toolVersion = "0.8.13"
+}
+
 dependencies {
 	//implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -37,4 +42,30 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport //추가: test가 수행될 때마다 jacocoTestReport 작업 수행
+}
+
+jacocoTestReport {
+	dependsOn test // tast 실행 전에 수행될 task
+	reports { // 어떤 파일을 생성할지/생성하지 않을지
+		xml.required.set(true)
+		html.required.set(true)
+		csv.required.set(false)
+	}
+	finalizedBy jacocoTestCoverageVerification
+}
+
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			element = 'CLASS'
+			enabled = true
+
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.0
+			}
+		}
+	}
 }
