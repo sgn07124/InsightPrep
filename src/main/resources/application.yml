@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: InsightPrep
+
+  profiles:
+    active: local
+    include:
