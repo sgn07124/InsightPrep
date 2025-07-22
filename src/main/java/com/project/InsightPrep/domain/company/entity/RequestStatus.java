@@ -1,5 +1,5 @@
 package com.project.InsightPrep.domain.company.entity;
 
-public enum Status {
+public enum RequestStatus {
     PENDING, APPROVED, REJECTED
 }
