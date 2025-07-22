@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum ApiSuccessCode {
 
-    SUCCESS("SUCCESS", HttpStatus.OK, "요청이 성공했습니다.");
+    SUCCESS("SUCCESS", HttpStatus.OK, "요청이 성공했습니다."),
+
+    SIGNUP_SUCCESS("SIGNUP_SUCCESS", HttpStatus.OK, "회원가입이 완료되었습니다.");
 
     private final String code;
     private final HttpStatus status;
