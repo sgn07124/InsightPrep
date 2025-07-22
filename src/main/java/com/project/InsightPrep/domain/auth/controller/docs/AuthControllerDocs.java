@@ -1,4 +1,4 @@
-package com.project.InsightPrep.domain.auth.controller;
+package com.project.InsightPrep.domain.auth.controller.docs;
 
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest;
 import com.project.InsightPrep.global.common.response.ApiResponse;
