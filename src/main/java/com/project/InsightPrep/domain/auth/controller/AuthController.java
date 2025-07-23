@@ -32,7 +32,7 @@ public class AuthController implements AuthControllerDocs {
 
     @Override
     @PostMapping("/sendEmail")
-    public ResponseEntity<ApiResponse<String>> sendEmail(@RequestBody @Valid AuthRequest.MemberEmailDto emailDto) {
+    public ResponseEntity<ApiResponse<?>> sendEmail(@RequestBody @Valid AuthRequest.MemberEmailDto emailDto) {
         emailService.sendCodeToEmail(emailDto.getEmail());
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SEND_EMAIL_SUCCESS));
     }

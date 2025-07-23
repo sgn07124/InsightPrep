@@ -15,7 +15,7 @@ public interface AuthControllerDocs {
     public ResponseEntity<ApiResponse<?>> signup(@RequestBody @Valid AuthRequest.signupDto request);
 
     @Operation(summary = "이메일 인증 번호 전송", description = "이메일 인증을 위해 인증 번호를 해당 메일로 전송합니다.")
-    public ResponseEntity<ApiResponse<String>> sendEmail(@RequestBody @Valid AuthRequest.MemberEmailDto request);
+    public ResponseEntity<ApiResponse<?>> sendEmail(@RequestBody @Valid AuthRequest.MemberEmailDto request);
 
     @Operation(summary = "이메일 인증", description = "이메일과 인증 코드로 인증을 진행합니다. 인증 코드의 만료 시간은 10분 입니다.")
     public ResponseEntity<ApiResponse<?>> verifyEmail(@RequestBody @Valid AuthRequest.MemberEmailVerifyDto request);
