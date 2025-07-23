@@ -6,14 +6,19 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 public class AuthRequest {
 
     @Builder
     @Getter
     @JsonInclude(Include.NON_NULL)
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class signupDto {
 
         @NotBlank(message = "이메일은 필수입니다.")
@@ -34,6 +39,7 @@ public class AuthRequest {
     }
 
     @Getter
+    @NoArgsConstructor
     public static class MemberEmailDto {
         @NotBlank
         @Email
@@ -41,6 +47,7 @@ public class AuthRequest {
     }
 
     @Getter
+    @NoArgsConstructor
     public static class MemberEmailVerifyDto {
         @NotBlank
         private String email;

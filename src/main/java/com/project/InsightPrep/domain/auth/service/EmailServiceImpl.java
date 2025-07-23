@@ -61,6 +61,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Transactional
     public void sendCodeToEmail(String email) {
 
         existEmail(email);  // 사용자 전체 대상 이메일 중복 검사
