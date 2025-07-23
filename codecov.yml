@@ -8,6 +8,7 @@ comment:
   branches:
     - main
     - develop
+
 ignore:
   - "src/main/java/**/entity/**"
   - "src/main/java/**/dto/**"
