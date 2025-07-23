@@ -8,3 +8,11 @@ comment:
   branches:
     - main
     - develop
+ignore:
+  - "src/main/java/**/entity/**"
+  - "src/main/java/**/dto/**"
+  - "src/main/java/**/config/**" 
+  - "src/main/java/**/exception/**"
+  - "src/main/java/**/mapper/**"
+  - "src/main/java/**/advice/**"
+  - "src/main/java/**/docs/**"  
