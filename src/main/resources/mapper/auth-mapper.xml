@@ -3,9 +3,13 @@
 
 <mapper namespace="com.project.InsightPrep.domain.auth.mapper.AuthMapper">
 
-    <insert id="insertMember" parameterType="member">
+    <insert id="insertMember" parameterType="member" keyProperty="id">
         INSERT INTO member (email, password, nickname, role, created_at, updated_at)
         VALUES (#{email}, #{password}, #{nickname}, #{role}, NOW(), NOW())
     </insert>
+
+    <select id="existEmail" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM member WHERE email = #{email}
+    </select>
 
 </mapper>

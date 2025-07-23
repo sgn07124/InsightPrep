@@ -7,4 +7,6 @@ import org.apache.ibatis.annotations.Mapper;
 public interface AuthMapper {
 
     void insertMember(Member member);
+
+    boolean existEmail(String email);
 }

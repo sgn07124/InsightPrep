@@ -19,17 +19,12 @@ public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper authMapper;
+    private final EmailService emailService;
 
     @Override
     @Transactional
     public void signup(signupDto dto) {
-        if (!dto.isCheckEmail()) {
-            throw new AuthException(AuthErrorCode.EMAIL_VERIFICATION_ERROR);
-        }
-
-        if (!dto.getPassword().equals(dto.getRe_password())) {
-            throw new AuthException(AuthErrorCode.PASSWORD_MATCH_ERROR);
-        }
+        validateSignUp(dto);
 
         Member member = Member.builder()
                 .email(dto.getEmail())
@@ -39,5 +34,17 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         authMapper.insertMember(member);
+    }
+
+    private void validateSignUp(signupDto dto) {
+        emailService.existEmail(dto.getEmail());
+        emailService.validateEmailVerified(dto.getEmail());  // 이메일 인증 여부
+        validatePasswordMatched(dto);  // 비밀번호 매치 여부
+    }
+
+    private static void validatePasswordMatched(signupDto dto) {
+        if (!dto.getPassword().equals(dto.getRe_password())) {
+            throw new AuthException(AuthErrorCode.PASSWORD_MATCH_ERROR);
+        }
     }
 }

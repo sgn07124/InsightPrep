@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.InsightPrep.domain.auth.mapper.EmailMapper">
+
+    <insert id="insertCode" parameterType="email"  keyProperty="id">
+        INSERT INTO email_verification (email, code, verified, expires_time)
+        VALUES (#{email}, #{code}, #{verified}, #{expiresTime})
+    </insert>
+
+    <select id="findByEmailAndCode" resultType="email" parameterType="map">
+        SELECT id, email, code, verified, expires_time as expiresTime FROM email_verification Where email = #{email} And code = #{code}
+    </select>
+
+    <!-- 이메일로 인증 코드 조회 -->
+    <select id="findByEmail" parameterType="string" resultType="email">
+        SELECT * FROM email_verification WHERE email = #{email}
+    </select>
+
+    <!-- 이메일로 인증 코드 삭제 -->
+    <delete id="deleteByEmail" parameterType="string">
+        DELETE FROM email_verification WHERE email = #{email}
+    </delete>
+
+    <delete id="deleteByExpiresTimeBefore" parameterType="java.time.LocalDateTime">
+        DELETE FROM email_verification WHERE expires_time &lt; #{expiresTime}
+    </delete>
+
+    <!-- 이메일 인증 성공 시, 인증 여부 저장 -->
+    <update id="updateVerified">
+        UPDATE email_verification SET verified = true WHERE email = #{email} AND code = #{code}
+    </update>
+</mapper>

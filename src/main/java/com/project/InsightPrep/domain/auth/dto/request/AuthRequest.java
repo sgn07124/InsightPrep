@@ -31,15 +31,21 @@ public class AuthRequest {
         @Pattern(regexp = "^[가-힣a-zA-Z0-9]+$", message = "닉네임은 한글,영문,숫자만 사용할 수 있습니다.")
         @Size(max = 10, message = "닉네임은 10자 이내여야 합니다.")
         private String nickname;
-
-        private boolean checkEmail = false;
     }
 
     @Getter
-    public static class EmailDto {
-
+    public static class MemberEmailDto {
         @NotBlank
         @Email
         private String email;
+    }
+
+    @Getter
+    public static class MemberEmailVerifyDto {
+        @NotBlank
+        private String email;
+
+        @NotBlank
+        private String code;
     }
 }
