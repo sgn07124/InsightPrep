@@ -27,5 +27,5 @@ public class CompanyChatRoom extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
+    private RoomStatus roomStatus;
 }

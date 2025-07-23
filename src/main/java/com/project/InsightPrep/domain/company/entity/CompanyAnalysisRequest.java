@@ -35,7 +35,7 @@ public class CompanyAnalysisRequest extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status; // PENDING, APPROVED, REJECTED
+    private RequestStatus requestStatus; // PENDING, APPROVED, REJECTED
 
     @Column(length = 255)
     private String reason; // 거절 사유 등

@@ -37,4 +37,7 @@ out/
 .vscode/
 
 ### yml파일 ###
-/src/main/resources/**
+/src/main/resources/*
+!/src/main/resources/mapper/
+!/src/main/resources/mapper/**/*.xml
+!/src/main/resources/sql-map-config.xml
