@@ -54,6 +54,21 @@ tasks.named('test') {
 
 jacocoTestReport {
 	dependsOn test // tast 실행 전에 수행될 task
+	afterEvaluate {
+		classDirectories.setFrom(
+				files(classDirectories.files.collect {
+					fileTree(dir: it, excludes: [
+							'**/dto/**',
+							'**/entity/**',
+							'**/config/**',
+							'**/exception/**',
+							'**/mapper/**',
+							'**/advice/**',
+							'**/docs/**'
+					])
+				})
+		)
+	}
 	reports { // 어떤 파일을 생성할지/생성하지 않을지
 		xml.required.set(true)
 		html.required.set(true)
