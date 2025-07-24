@@ -33,8 +33,10 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // 개발 중 Swagger 등 요청 허용
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)) // 세션 사용 가능하도록 설정
-                .formLogin(AbstractHttpConfigurer::disable) // 직접 로그인 구현 시 필요
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)  // 세션 사용 가능하도록 설정
+                        .sessionFixation().changeSessionId()  // 인증 시 새로운 세션 발급
+                )
+                .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/swagger-ui/**",

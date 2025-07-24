@@ -12,7 +12,9 @@ public enum ApiSuccessCode {
 
     SIGNUP_SUCCESS("SIGNUP_SUCCESS", HttpStatus.OK, "회원가입이 완료되었습니다."),
     SEND_EMAIL_SUCCESS("SEND_EMAIL_SUCCESS", HttpStatus.OK, "이메일 전송 성공"),
-    VERIFIED_EMAIL_SUCCESS("VERIFIED_EMAIL_SUCCESS", HttpStatus.OK, "이메일 인증 성공");
+    VERIFIED_EMAIL_SUCCESS("VERIFIED_EMAIL_SUCCESS", HttpStatus.OK, "이메일 인증 성공"),
+    LOGIN_SUCCESS("LOGIN_SUCCESS", HttpStatus.OK, "로그인 성공"),
+    LOGOUT_SUCCESS("LOGOUT_SUCCESS", HttpStatus.OK, "로그아웃 성공");
 
     private final String code;
     private final HttpStatus status;

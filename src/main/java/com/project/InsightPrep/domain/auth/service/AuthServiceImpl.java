@@ -1,11 +1,14 @@
 package com.project.InsightPrep.domain.auth.service;
 
+import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.LoginDto;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.signupDto;
+import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,6 +37,23 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         authMapper.insertMember(member);
+    }
+
+    @Override
+    @Transactional
+    public LoginResultDto login(LoginDto request, HttpSession session) {
+        Member member = authMapper.findByEmail(request.getEmail()).orElseThrow(() -> new AuthException(AuthErrorCode.LOGIN_FAIL));
+
+        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
+            throw new AuthException(AuthErrorCode.LOGIN_FAIL);
+        }
+
+
+        session.setAttribute("LOGIN_MEMBER_ID", member.getId());
+        if (request.isAutoLogin()) {
+            session.setMaxInactiveInterval(7 * 24 * 60 * 60);  // 7일
+        }
+        return new LoginResultDto(member.getId(), member.getNickname());
     }
 
     private void validateSignUp(signupDto dto) {

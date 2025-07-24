@@ -55,4 +55,17 @@ public class AuthRequest {
         @NotBlank
         private String code;
     }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LoginDto {
+        @NotBlank @Email
+        private String email;
+
+        @NotBlank
+        private String password;
+
+        private boolean autoLogin;
+    }
 }

@@ -11,6 +11,7 @@ public enum AuthErrorCode implements BaseErrorCode {
 
     // 유효성 검사
     PASSWORD_MATCH_ERROR("PASSWORD_MATCH_ERROR", HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
+    LOGIN_FAIL("LOGIN_FAIL", HttpStatus.BAD_REQUEST, "이메일 또는 비밀번호가 일치하지 않습니다."),
 
     // 이메일
     EMAIL_DUPLICATE_ERROR("EMAIL_DUPLICATE_ERROR", HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
