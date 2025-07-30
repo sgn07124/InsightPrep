@@ -20,7 +20,9 @@ public enum AuthErrorCode implements BaseErrorCode {
     ALREADY_SEND_CODE_ERROR("ALREADY_SEND_CODE_ERROR", HttpStatus.BAD_REQUEST, "이미 유효한 인증 코드가 발급되었습니다."),
     CODE_NOT_MATCH_ERROR("CODE_NOT_MATCH_ERROR", HttpStatus.BAD_REQUEST, "인증 코드가 일치하지 않습니다"),
     UNAUTHORIZED("UNAUTHORIZED", HttpStatus.UNAUTHORIZED, "비로그인 상태입니다."),
-    MEMBER_NOT_FOUND("MEMBER_NOT_FOUND", HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다.");
+    MEMBER_NOT_FOUND("MEMBER_NOT_FOUND", HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다."),
+    NOT_AUTHENTICATED("NOT_AUTHENTICATED", HttpStatus.UNAUTHORIZED, "로그인 정보가 없습니다."),
+    INVALID_AUTHENTICATION_PRINCIPAL("INVALID_AUTHENTICATION_PRINCIPAL", HttpStatus.FORBIDDEN, "인증 정보가 올바르지 않습니다.");
 
 
     private final String code;

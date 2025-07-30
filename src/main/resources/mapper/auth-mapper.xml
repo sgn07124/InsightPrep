@@ -17,7 +17,7 @@
     </select>
 
     <select id="findById" resultType="member">
-        SELECT id, email, password, nickname, role FROM member WHERE id = #{id}
+        SELECT * FROM member WHERE id = #{id}
     </select>
 
 </mapper>
