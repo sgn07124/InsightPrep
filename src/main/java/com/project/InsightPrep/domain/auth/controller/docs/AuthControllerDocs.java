@@ -25,7 +25,7 @@ public interface AuthControllerDocs {
     public ResponseEntity<ApiResponse<?>> verifyEmail(@RequestBody @Valid AuthRequest.MemberEmailVerifyDto request);
 
     @Operation(summary = "로그인", description = "이메일, 비밀번호로 로그인을 합니다. ")
-    public ResponseEntity<ApiResponse<LoginResultDto>> login (@RequestBody @Valid AuthRequest.LoginDto request, HttpSession session);
+    public ResponseEntity<ApiResponse<LoginResultDto>> login (@RequestBody @Valid AuthRequest.LoginDto request);
 
     @Operation(summary = "로그아웃", description = "로그아웃을 진행하면 쿠키가 삭제됩니다.")
     public ResponseEntity<ApiResponse<?>> logout (HttpServletRequest request, HttpServletResponse response);

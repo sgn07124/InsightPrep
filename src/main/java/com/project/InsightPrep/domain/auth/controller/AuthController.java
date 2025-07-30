@@ -6,6 +6,7 @@ import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResult
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
+import com.project.InsightPrep.domain.auth.service.CustomUserDetails;
 import com.project.InsightPrep.domain.auth.service.EmailService;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,8 +61,8 @@ public class AuthController implements AuthControllerDocs {
 
     @Override
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResultDto>> login (@RequestBody @Valid AuthRequest.LoginDto request, HttpSession session) {
-        LoginResultDto res = authService.login(request, session);
+    public ResponseEntity<ApiResponse<LoginResultDto>> login (@RequestBody @Valid AuthRequest.LoginDto request) {
+        LoginResultDto res = authService.login(request);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.LOGIN_SUCCESS, res));
     }
 
@@ -82,10 +84,10 @@ public class AuthController implements AuthControllerDocs {
     }
 
     @GetMapping("/debug/session")
-    public ResponseEntity<?> debugSession(HttpSession session) {
-        String sessionId = session.getId();  // 현재 클라이언트가 가진 세션 ID
-        int sessionExpires = session.getMaxInactiveInterval();  // 세션 만료 시간 (쿠키는 임시 쿠키이므로 max-age 정보가 없음)
-        Object memberId = session.getAttribute("LOGIN_MEMBER_ID");  // 세션에 저장된 사용자 정보
+    public ResponseEntity<?> debugSession(HttpSession session, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        String sessionId = session.getId();
+        int sessionExpires = session.getMaxInactiveInterval();
+        Long memberId = (userDetails != null) ? userDetails.getMember().getId() : null;
 
         Map<String, Object> debugInfo = new HashMap<>();
         debugInfo.put("sessionId", sessionId);
