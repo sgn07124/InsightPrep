@@ -1,6 +1,6 @@
 package com.project.InsightPrep.global.config;
 
-import com.project.InsightPrep.domain.auth.service.CustomUserDetailsService;
+import com.project.InsightPrep.global.auth.service.CustomUserDetailsService;
 import com.project.InsightPrep.global.auth.handler.CustomAccessDeniedHandler;
 import com.project.InsightPrep.global.auth.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;

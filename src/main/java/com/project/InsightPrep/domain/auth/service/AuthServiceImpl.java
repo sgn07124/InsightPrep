@@ -8,6 +8,7 @@ import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
+import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.project.InsightPrep.domain.auth.service;
+package com.project.InsightPrep.global.auth.domain;
 
 import com.project.InsightPrep.domain.member.entity.Member;
 import java.util.Collection;

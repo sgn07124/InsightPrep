@@ -1,7 +1,8 @@
-package com.project.InsightPrep.domain.auth.service;
+package com.project.InsightPrep.global.auth.service;
 
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.member.entity.Member;
+import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

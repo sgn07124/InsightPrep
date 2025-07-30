@@ -13,7 +13,7 @@ import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResult
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
-import com.project.InsightPrep.domain.auth.service.CustomUserDetails;
+import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import com.project.InsightPrep.domain.auth.service.EmailService;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;

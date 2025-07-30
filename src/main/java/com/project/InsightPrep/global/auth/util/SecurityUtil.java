@@ -3,7 +3,7 @@ package com.project.InsightPrep.global.auth.util;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
-import com.project.InsightPrep.domain.auth.service.CustomUserDetails;
+import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import com.project.InsightPrep.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
