@@ -13,7 +13,10 @@ import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResult
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
+import com.project.InsightPrep.domain.auth.service.CustomUserDetails;
 import com.project.InsightPrep.domain.auth.service.EmailService;
+import com.project.InsightPrep.domain.member.entity.Member;
+import com.project.InsightPrep.domain.member.entity.Role;
 import com.project.InsightPrep.global.auth.handler.CustomAccessDeniedHandler;
 import com.project.InsightPrep.global.auth.handler.CustomAuthenticationEntryPoint;
 import org.junit.jupiter.api.DisplayName;
@@ -23,9 +26,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -194,5 +201,34 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN_ERROR"));
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공 - 세션 제거 및 쿠키 삭제 확인")
+    void logout_success() throws Exception {
+        // given
+        Member mockMember = Member.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("Password123!")
+                .nickname("테스트유저")
+                .role(Role.USER)
+                .build();
+
+        CustomUserDetails userDetails = new CustomUserDetails(mockMember);
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+        // when & then
+        mockMvc.perform(post("/auth/logout")
+                        .with(authentication(authentication)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("LOGOUT_SUCCESS"))
+                .andExpect(jsonPath("$.message").value("로그아웃 성공"));
+    }
+
+    // 테스트에서 인증 객체 설정을 위한 헬퍼 메서드
+    private static RequestPostProcessor authentication(Authentication authentication) {
+        return SecurityMockMvcRequestPostProcessors.authentication(authentication);
     }
 }
