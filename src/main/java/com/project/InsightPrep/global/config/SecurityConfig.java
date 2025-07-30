@@ -48,7 +48,8 @@ public class SecurityConfig {
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                        .requestMatchers("/auth/login", "/auth/signup", "/auth/sendEmail", "/auth/verifyEmail").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
                                 .authenticationEntryPoint(customAuthenticationEntryPoint)

@@ -18,7 +18,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.setContentType("application/json;charset=UTF-8");
 
         String responseBody = new ObjectMapper().writeValueAsString(Map.of(
-                "code", "UNAUTHORIZED",
+                "code", "NEED_LOGIN_ERROR",
                 "message", "로그인이 필요한 요청입니다."
         ));
         response.getWriter().write(responseBody);
