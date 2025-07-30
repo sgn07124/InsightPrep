@@ -6,7 +6,6 @@ import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResult
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
-import com.project.InsightPrep.domain.auth.service.CustomUserDetails;
 import com.project.InsightPrep.domain.auth.service.EmailService;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
@@ -15,12 +14,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -81,19 +76,5 @@ public class AuthController implements AuthControllerDocs {
         response.addCookie(cookie);
 
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.LOGOUT_SUCCESS));
-    }
-
-    @GetMapping("/debug/session")
-    public ResponseEntity<?> debugSession(HttpSession session, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        String sessionId = session.getId();
-        int sessionExpires = session.getMaxInactiveInterval();
-        Long memberId = (userDetails != null) ? userDetails.getMember().getId() : null;
-
-        Map<String, Object> debugInfo = new HashMap<>();
-        debugInfo.put("sessionId", sessionId);
-        debugInfo.put("sessionExpires", sessionExpires);
-        debugInfo.put("loginMemberId", memberId);
-
-        return ResponseEntity.ok(debugInfo);
     }
 }

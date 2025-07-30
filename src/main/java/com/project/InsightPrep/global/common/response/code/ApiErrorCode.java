@@ -13,7 +13,8 @@ public enum ApiErrorCode implements BaseErrorCode {
     EMPTY_FIELD_ERROR("EMPTY_FIELD_ERROR", HttpStatus.BAD_REQUEST, "요청 필드가 비어있습니다."),
     FORBIDDEN_ERROR("FORBIDDEN_ERROR", HttpStatus.FORBIDDEN, "사용자 권한이 없습니다."),
     TYPE_MISMATCH_ERROR("TYPE_MISMATCH_ERROR", HttpStatus.BAD_REQUEST, "파라미터 타입이 일치하지 않습니다."),
-    DATE_INVALID_ERROR("DATE_INVALID_ERROR", HttpStatus.BAD_REQUEST, "날짜 형식이 잘못되었습니다.");
+    DATE_INVALID_ERROR("DATE_INVALID_ERROR", HttpStatus.BAD_REQUEST, "날짜 형식이 잘못되었습니다."),
+    NEED_LOGIN_ERROR("NEED_LOGIN_ERROR", HttpStatus.BAD_REQUEST, "로그인이 필요합니다.");
 
     private final String code;
     private final HttpStatus status;
