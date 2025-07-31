@@ -34,7 +34,6 @@ public class SecurityUtil {
 
     public Member getAuthenticatedMember() {
         Long memberId = getLoginMemberId();
-        System.out.println(memberId);
         return authMapper.findById(memberId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
     }
