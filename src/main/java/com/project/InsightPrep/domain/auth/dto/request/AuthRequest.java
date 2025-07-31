@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @NoArgsConstructor
 public class AuthRequest {
@@ -48,6 +49,7 @@ public class AuthRequest {
 
     @Getter
     @NoArgsConstructor
+    @Setter
     public static class MemberEmailVerifyDto {
         @NotBlank
         private String email;

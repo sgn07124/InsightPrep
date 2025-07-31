@@ -9,6 +9,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest;
+import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.MemberEmailVerifyDto;
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
@@ -135,6 +136,29 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().is4xxClientError()); // 또는 isUnauthorized() 등
+    }
+
+    @Test
+    @DisplayName("이메일 인증 실패 - else throw test")
+    void verifyEmail_shouldReturnError_whenCodeDoesNotMatch() throws Exception {
+        // given
+        String email = "test@example.com";
+        String code = "wrong-code";
+
+        AuthRequest.MemberEmailVerifyDto request = new MemberEmailVerifyDto();
+        request.setEmail(email);
+        request.setCode(code);
+
+        // EmailService.verifyCode는 false 반환하도록 설정
+        given(emailService.verifyCode(email, code)).willReturn(false);
+
+        // when & then
+        mockMvc.perform(post("/auth/verifyEmail")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CODE_NOT_MATCH_ERROR"))
+                .andExpect(jsonPath("$.message").value("인증 코드가 일치하지 않습니다"));
     }
 
     @Test
