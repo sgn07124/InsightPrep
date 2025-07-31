@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.auth.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.project.InsightPrep.domain.member.entity.Role;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,5 +19,12 @@ public class AuthResponse {
         private String nickname;
         private Role role;
 
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class LoginResultDto {
+        private Long memberId;
+        private String nickname;
     }
 }

@@ -12,4 +12,12 @@
         SELECT COUNT(*) > 0 FROM member WHERE email = #{email}
     </select>
 
+    <select id="findByEmail" resultType="member">
+        SELECT * FROM member WHERE email = #{email}
+    </select>
+
+    <select id="findById" resultType="member">
+        SELECT * FROM member WHERE id = #{id}
+    </select>
+
 </mapper>

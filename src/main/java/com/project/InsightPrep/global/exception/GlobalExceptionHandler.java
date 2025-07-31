@@ -7,6 +7,8 @@ import java.time.format.DateTimeParseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -56,6 +58,17 @@ public class GlobalExceptionHandler {
         log.error("잘못된 날짜 형식 입력", e);
 
         return buildErrorResponse(ApiErrorCode.DATE_INVALID_ERROR);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        return buildErrorResponse(ApiErrorCode.FORBIDDEN_ERROR);
+    }
+
+    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthException(AuthenticationCredentialsNotFoundException ex) {
+        log.warn("[인증 실패] {}", ex.getMessage());
+        return buildErrorResponse(ApiErrorCode.NEED_LOGIN_ERROR);
     }
 
     private ResponseEntity<ApiErrorResponse> buildErrorResponse(BaseErrorCode errorCode) {

@@ -1,25 +1,39 @@
 package com.project.InsightPrep.domain.auth.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.project.InsightPrep.domain.auth.dto.request.AuthRequest;
+import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.MemberEmailVerifyDto;
+import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
+import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import com.project.InsightPrep.domain.auth.service.EmailService;
+import com.project.InsightPrep.domain.member.entity.Member;
+import com.project.InsightPrep.domain.member.entity.Role;
+import com.project.InsightPrep.global.auth.handler.CustomAccessDeniedHandler;
+import com.project.InsightPrep.global.auth.handler.CustomAuthenticationEntryPoint;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -33,6 +47,15 @@ class AuthControllerTest {
 
     @MockitoBean
     private EmailService emailService;
+
+    @MockitoBean
+    private CustomAccessDeniedHandler accessDeniedHandler;
+
+    @MockitoBean
+    private CustomAuthenticationEntryPoint authenticationEntryPoint;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("회원가입 성공 테스트")
@@ -113,5 +136,123 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().is4xxClientError()); // 또는 isUnauthorized() 등
+    }
+
+    @Test
+    @DisplayName("이메일 인증 실패 - else throw test")
+    void verifyEmail_shouldReturnError_whenCodeDoesNotMatch() throws Exception {
+        // given
+        String email = "test@example.com";
+        String code = "wrong-code";
+
+        AuthRequest.MemberEmailVerifyDto request = new MemberEmailVerifyDto();
+        request.setEmail(email);
+        request.setCode(code);
+
+        // EmailService.verifyCode는 false 반환하도록 설정
+        given(emailService.verifyCode(email, code)).willReturn(false);
+
+        // when & then
+        mockMvc.perform(post("/auth/verifyEmail")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CODE_NOT_MATCH_ERROR"))
+                .andExpect(jsonPath("$.message").value("인증 코드가 일치하지 않습니다"));
+    }
+
+    @Test
+    @DisplayName("로그인 성공 테스트")
+    void login_success() throws Exception {
+        // given
+        AuthRequest.LoginDto request = new AuthRequest.LoginDto("test@example.com", "Password123!", false);
+        LoginResultDto resultDto = new LoginResultDto(1L, "테스트유저");
+
+        given(authService.login(any())).willReturn(resultDto);
+
+        // when & then
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("LOGIN_SUCCESS"))
+                .andExpect(jsonPath("$.result.nickname").value("테스트유저"));
+    }
+
+    @Test
+    @DisplayName("로그인 유효성 검사 실패 테스트")
+    void login_validation_fail() throws Exception {
+        // given
+        AuthRequest.LoginDto request = new AuthRequest.LoginDto("", "Password123!", false);
+
+        // when & then
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("EMAIL_NOTBLANK_ERROR")); // ApiErrorCode에 따라
+    }
+
+    @Test
+    @DisplayName("로그인 인증 실패 예외 처리 테스트")
+    void login_authentication_fail() throws Exception {
+        // given
+        AuthRequest.LoginDto request = new AuthRequest.LoginDto("test@example.com", "Password123!", false);
+
+        given(authService.login(any()))
+                .willThrow(new AuthenticationCredentialsNotFoundException("잘못된 인증"));
+
+        // when & then
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("NEED_LOGIN_ERROR"));
+    }
+
+    @Test
+    @DisplayName("로그인 인가 실패 예외 처리 테스트")
+    void login_Authorization_fail() throws Exception {
+        // given
+        AuthRequest.LoginDto request = new AuthRequest.LoginDto("test@example.com", "Password123!", false);
+
+        given(authService.login(any()))
+                .willThrow(new AuthorizationDeniedException("권한 없음"));
+
+        // when & then
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN_ERROR"));
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공 - 세션 제거 및 쿠키 삭제 확인")
+    void logout_success() throws Exception {
+        // given
+        Member mockMember = Member.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("Password123!")
+                .nickname("테스트유저")
+                .role(Role.USER)
+                .build();
+
+        CustomUserDetails userDetails = new CustomUserDetails(mockMember);
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+        // when & then
+        mockMvc.perform(post("/auth/logout")
+                        .with(authentication(authentication)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("LOGOUT_SUCCESS"))
+                .andExpect(jsonPath("$.message").value("로그아웃 성공"));
+    }
+
+    // 테스트에서 인증 객체 설정을 위한 헬퍼 메서드
+    private static RequestPostProcessor authentication(Authentication authentication) {
+        return SecurityMockMvcRequestPostProcessors.authentication(authentication);
     }
 }
