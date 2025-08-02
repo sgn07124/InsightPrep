@@ -36,7 +36,7 @@ public class SharedPost extends BaseTimeEntity {
     private String title;
 
     // 게시글 본문
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     // 공유된 답변
@@ -51,5 +51,6 @@ public class SharedPost extends BaseTimeEntity {
 
     // 게시글 상태: OPEN or RESOLVED
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PostStatus status = PostStatus.OPEN;
 }
