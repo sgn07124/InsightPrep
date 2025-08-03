@@ -3,11 +3,12 @@ package com.project.InsightPrep.domain.question.entity;
 import com.project.InsightPrep.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -25,4 +26,8 @@ public class Question extends BaseTimeEntity {
 
     @Lob
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AnswerStatus status = AnswerStatus.WAITING;
 }
