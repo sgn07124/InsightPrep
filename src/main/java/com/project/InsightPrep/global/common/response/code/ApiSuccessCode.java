@@ -14,7 +14,9 @@ public enum ApiSuccessCode {
     SEND_EMAIL_SUCCESS("SEND_EMAIL_SUCCESS", HttpStatus.OK, "이메일 전송 성공"),
     VERIFIED_EMAIL_SUCCESS("VERIFIED_EMAIL_SUCCESS", HttpStatus.OK, "이메일 인증 성공"),
     LOGIN_SUCCESS("LOGIN_SUCCESS", HttpStatus.OK, "로그인 성공"),
-    LOGOUT_SUCCESS("LOGOUT_SUCCESS", HttpStatus.OK, "로그아웃 성공");
+    LOGOUT_SUCCESS("LOGOUT_SUCCESS", HttpStatus.OK, "로그아웃 성공"),
+
+    CREATE_QUESTION_SUCCESS("CREATE_QUESTION_SUCCESS", HttpStatus.OK, "질문 생성 성공");
 
     private final String code;
     private final HttpStatus status;
