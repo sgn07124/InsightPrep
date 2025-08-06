@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.InsightPrep.domain.question.mapper.AnswerMapper">
+
+    <insert id="insertAnswer" parameterType="answer" keyProperty="id">
+        INSERT INTO answer (created_at, updated_at, member_id, question_id, content)
+        VALUES (NOW(), NOW(), #{member.id}, #{question.id}, #{content})
+    </insert>
+
+</mapper>

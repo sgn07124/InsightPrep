@@ -5,6 +5,7 @@ import com.project.InsightPrep.domain.question.dto.request.AnswerRequest;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.AnswerDto;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
+import com.project.InsightPrep.domain.question.service.AnswerService;
 import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class QuestionController implements QuestionControllerDocs {
 
     private final QuestionService questionService;
+    private final AnswerService answerService;
 
     @Override
     @PostMapping("/{category}")
@@ -36,7 +38,8 @@ public class QuestionController implements QuestionControllerDocs {
     @Override
     @PostMapping("/{questionId}/answer")
     public ResponseEntity<ApiResponse<AnswerDto>> saveAnswer(@RequestBody @Valid AnswerRequest.AnswerDto dto, @PathVariable Long questionId) {
-        return null;
+        answerService.saveAnswer(dto, questionId);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SAVE_ANSWER_SUCCESS));
     }
 
     @Override

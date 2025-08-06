@@ -11,4 +11,8 @@
         VALUES (NOW(), NOW(), #{category}, #{content}, #{status})
     </insert>
 
+    <select id="findById" resultType="question">
+        SELECT * FROM question WHERE id = #{id}
+    </select>
+
 </mapper>
