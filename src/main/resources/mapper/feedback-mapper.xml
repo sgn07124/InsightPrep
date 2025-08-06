@@ -4,8 +4,8 @@
 <mapper namespace="com.project.InsightPrep.domain.question.mapper.FeedbackMapper">
 
     <insert id="insertFeedback" parameterType="feedback" keyProperty="id">
-        INSERT INTO answer_feedback (score, answer_id, created_at, updated_at, improvement, summary)
-        VALUES (#{score}, #{answer.id}, NOW(), NOW(), #{improvement}, #{summary})
+        INSERT INTO answer_feedback (score, answer_id, created_at, updated_at, improvement, model_answer)
+        VALUES (#{score}, #{answer.id}, NOW(), NOW(), #{improvement}, #{modelAnswer})
     </insert>
 
 </mapper>

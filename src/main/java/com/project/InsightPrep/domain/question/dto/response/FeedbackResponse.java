@@ -10,6 +10,6 @@ import lombok.Getter;
 @JsonInclude(Include.NON_NULL)
 public class FeedbackResponse {
     private int score;
-    private String summary;
     private String improvement;
+    private String modelAnswer;
 }

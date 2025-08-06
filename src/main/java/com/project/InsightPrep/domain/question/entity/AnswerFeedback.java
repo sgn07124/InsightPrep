@@ -34,8 +34,8 @@ public class AnswerFeedback extends BaseTimeEntity {
     private Integer score;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String summary;  // 간단한 요약
+    private String improvement;  // 개선점 제안
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String improvement;  // 개선점 제안
+    private String modelAnswer;  // 면접관의 정답
 }
