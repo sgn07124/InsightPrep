@@ -21,4 +21,10 @@
         WHERE id = #{questionId}
     </update>
 
+    <delete id="deleteUnansweredQuestions" parameterType="string">
+        DELETE FROM question
+        WHERE status = #{status}
+          AND created_at &lt; Now() - INTERVAL '1 HOUR'
+    </delete>
+
 </mapper>

@@ -11,4 +11,6 @@ public interface QuestionMapper {
     Question findById(@Param("id") Long id);
 
     void updateStatus(@Param("questionId") Long questionId, @Param("status") String answerStatus);
+
+    void deleteUnansweredQuestions(@Param("status") String answerStatus);
 }
