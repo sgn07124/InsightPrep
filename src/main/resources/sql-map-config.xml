@@ -8,5 +8,6 @@
         <typeAlias alias="email" type="com.project.InsightPrep.domain.auth.entity.EmailVerification"/>
         <typeAlias alias="question" type="com.project.InsightPrep.domain.question.entity.Question"/>
         <typeAlias alias="answer" type="com.project.InsightPrep.domain.question.entity.Answer"/>
+        <typeAlias alias="feedback" type="com.project.InsightPrep.domain.question.entity.AnswerFeedback"/>
     </typeAliases>
 </configuration>

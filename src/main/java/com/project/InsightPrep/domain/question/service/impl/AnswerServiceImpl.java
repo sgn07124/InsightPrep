@@ -21,6 +21,7 @@ public class AnswerServiceImpl implements AnswerService {
     private final SecurityUtil securityUtil;
     private final QuestionMapper questionMapper;
     private final AnswerMapper answerMapper;
+    private final FeedbackServiceImpl feedbackService;
 
     @Override
     @Transactional
@@ -35,5 +36,6 @@ public class AnswerServiceImpl implements AnswerService {
                 .build();
 
         answerMapper.insertAnswer(answer);
+        feedbackService.saveFeedback(answer);
     }
 }

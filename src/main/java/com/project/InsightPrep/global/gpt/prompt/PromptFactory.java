@@ -5,7 +5,7 @@ import java.util.List;
 
 public class PromptFactory {
 
-    private PromptFactory() {} // static-only
+    private PromptFactory() {}
 
     // 질문 생성용 프롬프트
     public static List<GptMessage> forQuestionGeneration(String category) {
@@ -19,6 +19,33 @@ public class PromptFactory {
                 """;
 
         String userPrompt = category + "에 관한 CS(Computer System) 면접 질문 하나를 만들어 주세요.";
+        return toMessages(systemPrompt, userPrompt);
+    }
+
+    public static List<GptMessage> forFeedbackGeneration(String question, String userAnswer) {
+        String systemPrompt = """
+            당신은 전문적이고 경험 많은 소프트웨어 개발 면접관입니다. 
+            user의 질문에 대한 지원자의 답변을 읽고, 그 답변의 정확성과 완성도를 평가해야 합니다.
+
+            평가 기준은 다음과 같습니다:
+            1. 질문에 대한 개념적 이해와 설명이 적절한가?
+            2. 실무적인 관점에서 충분한 설명이 이루어졌는가?
+            3. 핵심 내용을 빠뜨리지 않았는가?
+            
+            출력은 아래 JSON 형식만 따릅니다. 다른 텍스트는 포함하지 마세요:
+            {
+              "score": ...,                // 0부터 100 사이의 점수. 점수는 정량적으로 명확하게 판단합니다.
+              "summary": "...",            // 답변이 맞았는지 여부와 함께 정답 또는 보완 설명을 제공합니다.
+              "improvement": "..."             // 더 좋은 답변을 위한 개선 방향이나 추가 설명이 있으면 작성합니다.
+            }
+            """;
+
+        String userPrompt = String.format("""
+            질문: %s
+            사용자 답변: %s
+            위 답변을 평가해 주세요.
+            """, question, userAnswer);
+
         return toMessages(systemPrompt, userPrompt);
     }
 

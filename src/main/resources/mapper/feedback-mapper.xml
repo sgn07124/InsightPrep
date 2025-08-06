@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.InsightPrep.domain.question.mapper.FeedbackMapper">
+
+    <insert id="insertFeedback" parameterType="feedback" keyProperty="id">
+        INSERT INTO answer_feedback (score, answer_id, created_at, updated_at, improvement, summary)
+        VALUES (#{score}, #{answer.id}, NOW(), NOW(), #{improvement}, #{summary})
+    </insert>
+
+</mapper>

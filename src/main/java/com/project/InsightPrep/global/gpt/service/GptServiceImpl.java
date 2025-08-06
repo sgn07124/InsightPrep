@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.global.gpt.dto.request.GptRequest;
 import com.project.InsightPrep.global.gpt.dto.response.CompanyAnalysisResponse;
-import com.project.InsightPrep.global.gpt.dto.response.FeedbackResponse;
+import com.project.InsightPrep.domain.question.dto.response.FeedbackResponse;
 import com.project.InsightPrep.global.gpt.dto.response.GptMessage;
 import com.project.InsightPrep.global.gpt.dto.response.GptResponse;
 import com.project.InsightPrep.global.gpt.exception.GptErrorCode;
