@@ -1,5 +1,6 @@
 package com.project.InsightPrep.domain.question.service.impl;
 
+import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
 import com.project.InsightPrep.domain.question.dto.response.FeedbackResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
@@ -40,5 +41,22 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .build();
 
         feedbackMapper.insertFeedback(feedback);
+    }
+
+    @Override
+    public FeedbackDto getFeedback(long answerId) {
+        AnswerFeedback feedback = feedbackMapper.findById(answerId);
+        if (feedback == null) {
+            return null;
+        }
+        System.out.println(feedback.getAnswer().getContent());
+        return FeedbackDto.builder()
+                .feedbackId(feedback.getId())
+                .questionId(feedback.getAnswer().getQuestion().getId())
+                .answerId(feedback.getAnswer().getId())
+                .score(feedback.getScore())
+                .improvement(feedback.getImprovement())
+                .modelAnswer(feedback.getModelAnswer())
+                .build();
     }
 }

@@ -6,6 +6,7 @@ import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.Answe
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.service.AnswerService;
+import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
@@ -26,10 +27,11 @@ public class QuestionController implements QuestionControllerDocs {
 
     private final QuestionService questionService;
     private final AnswerService answerService;
+    private final FeedbackService feedbackService;
 
     @Override
     @PostMapping("/{category}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<ApiResponse<QuestionResponse.QuestionDto>> createQuestion(@PathVariable @Valid String category) {
         QuestionResponse.QuestionDto dto = questionService.createQuestion(category);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.CREATE_QUESTION_SUCCESS, dto));
@@ -37,6 +39,7 @@ public class QuestionController implements QuestionControllerDocs {
 
     @Override
     @PostMapping("/{questionId}/answer")
+    @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<ApiResponse<AnswerDto>> saveAnswer(@RequestBody @Valid AnswerRequest.AnswerDto dto, @PathVariable Long questionId) {
         answerService.saveAnswer(dto, questionId);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SAVE_ANSWER_SUCCESS));
@@ -44,7 +47,12 @@ public class QuestionController implements QuestionControllerDocs {
 
     @Override
     @PostMapping("/{answerId}/feedback")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<FeedbackDto>> getFeedback(@PathVariable long answerId) {
-        return null;
+        FeedbackDto feedback = feedbackService.getFeedback(answerId);
+        if (feedback == null) {
+            return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.FEEDBACK_PENDING));
+        }
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_FEEDBACK_SUCCESS, feedback));
     }
 }

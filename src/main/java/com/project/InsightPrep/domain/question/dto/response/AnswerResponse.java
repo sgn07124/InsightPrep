@@ -26,7 +26,7 @@ public class AnswerResponse {
         private long answerId;
 
         private int score;
-        private String summary;  // 요약 및 정리
-        private String improvement;  // 개선점 제안
+        private String improvement;  // 요약 및 정리
+        private String modelAnswer;  // 개선점 제안
     }
 }

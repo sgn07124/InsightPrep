@@ -21,6 +21,6 @@ public interface QuestionControllerDocs {
     @Operation(summary = "답변 작성", description = "질문에 대한 답변을 작성합니다.")
     public ResponseEntity<ApiResponse<AnswerDto>> saveAnswer(@RequestBody @Valid AnswerRequest.AnswerDto dto, @PathVariable Long questionId);
 
-    @Operation(summary = "피드백 조회", description = "작성한 답변에 대한 피드백을 조회합니다.")
+    @Operation(summary = "피드백 조회", description = "작성한 답변에 대한 피드백을 조회합니다. 폴링 방식을 적용하여 프론트엔드에서 일정 시간(3초)마다 해당 요청을 하고, 피드백이 생성되었으면 반환, 아니면 202(PENDING)으로 반복하도록 구성합니다.")
     public ResponseEntity<ApiResponse<AnswerResponse.FeedbackDto>> getFeedback(@PathVariable long answerId);
 }
