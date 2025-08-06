@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.question.service.impl;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.question.dto.request.AnswerRequest.AnswerDto;
 import com.project.InsightPrep.domain.question.entity.Answer;
+import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
@@ -35,6 +36,7 @@ public class AnswerServiceImpl implements AnswerService {
                 .content(dto.getContent())
                 .build();
 
+        questionMapper.updateStatus(questionId, AnswerStatus.ANSWERED.name());
         answerMapper.insertAnswer(answer);
         feedbackService.saveFeedback(answer);
     }

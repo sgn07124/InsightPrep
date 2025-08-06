@@ -15,4 +15,10 @@
         SELECT * FROM question WHERE id = #{id}
     </select>
 
+    <update id="updateStatus" parameterType="map">
+        UPDATE question
+        SET status = #{status}, updated_at = NOW()
+        WHERE id = #{questionId}
+    </update>
+
 </mapper>
