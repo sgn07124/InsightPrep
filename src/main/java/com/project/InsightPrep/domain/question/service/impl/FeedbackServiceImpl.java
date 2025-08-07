@@ -8,7 +8,7 @@ import com.project.InsightPrep.domain.question.mapper.FeedbackMapper;
 import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.global.gpt.prompt.PromptFactory;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
-import com.project.InsightPrep.global.gpt.service.GptServiceImpl;
+import com.project.InsightPrep.global.gpt.service.GptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FeedbackServiceImpl implements FeedbackService {
 
-    private final GptServiceImpl gptService;
+    private final GptService gptService;
     private final FeedbackMapper feedbackMapper;
 
     @Transactional
@@ -44,6 +44,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public FeedbackDto getFeedback(long answerId) {
         AnswerFeedback feedback = feedbackMapper.findById(answerId);
         if (feedback == null) {

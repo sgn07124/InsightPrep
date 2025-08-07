@@ -8,6 +8,7 @@ import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.service.AnswerService;
+import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ public class AnswerServiceImpl implements AnswerService {
     private final SecurityUtil securityUtil;
     private final QuestionMapper questionMapper;
     private final AnswerMapper answerMapper;
-    private final FeedbackServiceImpl feedbackService;
+    private final FeedbackService feedbackService;
 
     @Override
     @Transactional

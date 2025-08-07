@@ -9,7 +9,7 @@ import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.global.gpt.prompt.PromptFactory;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
-import com.project.InsightPrep.global.gpt.service.GptServiceImpl;
+import com.project.InsightPrep.global.gpt.service.GptService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuestionServiceImpl implements QuestionService {
 
-    private final GptServiceImpl gptService;
+    private final GptService gptService;
     private final QuestionMapper questionMapper;
 
     @Override

@@ -18,7 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
-public class GptServiceImpl {
+public class GptServiceImpl implements GptService {
 
     private final WebClient gptWebClient;
     private final ObjectMapper objectMapper;
