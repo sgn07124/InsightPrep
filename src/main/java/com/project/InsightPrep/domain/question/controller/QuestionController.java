@@ -5,15 +5,18 @@ import com.project.InsightPrep.domain.question.dto.request.AnswerRequest;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.AnswerDto;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
+import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.service.AnswerService;
 import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,5 +57,12 @@ public class QuestionController implements QuestionControllerDocs {
             return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.FEEDBACK_PENDING));
         }
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_FEEDBACK_SUCCESS, feedback));
+    }
+
+    @Override
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<QuestionsDto>>> getQuestions() {
+        List<QuestionsDto> dto = questionService.getQuestions();
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, dto));
     }
 }

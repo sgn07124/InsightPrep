@@ -8,6 +8,7 @@ import com.project.InsightPrep.global.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,4 +24,7 @@ public interface QuestionControllerDocs {
 
     @Operation(summary = "피드백 조회", description = "작성한 답변에 대한 피드백을 조회합니다. 폴링 방식을 적용하여 프론트엔드에서 일정 시간(3초)마다 해당 요청을 하고, 피드백이 생성되었으면 반환, 아니면 202(PENDING)으로 반복하도록 구성합니다.")
     public ResponseEntity<ApiResponse<AnswerResponse.FeedbackDto>> getFeedback(@PathVariable long answerId);
+
+    @Operation(summary = "면접 질문들 조회", description = "본인이 답변한 질문들을 리스트로 조회합니다.")
+    public ResponseEntity<ApiResponse<List<QuestionResponse.QuestionsDto>>> getQuestions();
 }
