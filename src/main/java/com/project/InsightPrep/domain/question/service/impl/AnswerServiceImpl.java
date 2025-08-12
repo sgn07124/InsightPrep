@@ -5,6 +5,8 @@ import com.project.InsightPrep.domain.question.dto.request.AnswerRequest.AnswerD
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
+import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
+import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.service.AnswerService;
@@ -40,5 +42,23 @@ public class AnswerServiceImpl implements AnswerService {
         questionMapper.updateStatus(questionId, AnswerStatus.ANSWERED.name());
         answerMapper.insertAnswer(answer);
         feedbackService.saveFeedback(answer);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAnswer(long answerId) {
+        long memberId = securityUtil.getLoginMemberId();
+
+        Long questionId = answerMapper.findQuestionIdOfMyAnswer(answerId, memberId);
+        if (questionId == null) {
+            throw new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND);
+        }
+
+        int del = answerMapper.deleteMyAnswerById(answerId, memberId);
+        if (del == 0) {
+            throw new QuestionException(QuestionErrorCode.ALREADY_DELETED);
+        }
+
+        answerMapper.resetQuestionStatusIfNoAnswers(questionId, AnswerStatus.WAITING.name());
     }
 }

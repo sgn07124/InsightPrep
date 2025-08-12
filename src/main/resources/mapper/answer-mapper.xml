@@ -11,4 +11,74 @@
         VALUES (NOW(), NOW(), #{member.id}, #{question.id}, #{content})
     </insert>
 
+    <select id="findQuestionsWithFeedback" resultMap="QuestionsDtoMap">
+        SELECT
+            q.id            AS question_id,
+            q.category      AS category,
+            q.content       AS question_content,
+            a.id            AS answer_id,
+            a.content       AS answer_content,
+            f.id            AS feedback_id,
+            f.score         AS score,
+            f.improvement   AS improvement,
+            f.model_answer  AS model_answer
+        FROM question q
+        INNER JOIN answer a ON a.question_id = q.id AND a.member_id = #{memberId}
+        INNER JOIN answer_feedback f ON f.answer_id = a.id
+        ORDER BY a.id DESC
+    </select>
+
+    <!-- (옵션) 페이징 버전 -->
+    <select id="findQuestionsWithFeedbackPaged" resultMap="QuestionsDtoMap">
+        SELECT
+            q.id            AS question_id,
+            q.category      AS category,
+            q.content       AS question_content,
+            a.id            AS answer_id,
+            a.content       AS answer_content,
+            f.id            AS feedback_id,
+            f.score         AS score,
+            f.improvement   AS improvement,
+            f.model_answer  AS model_answer
+        FROM question q
+                 INNER JOIN answer a
+                            ON a.question_id = q.id
+                                AND a.member_id   = #{memberId}
+                 INNER JOIN answer_feedback f
+                            ON f.answer_id   = a.id
+        ORDER BY a.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <resultMap id="QuestionsDtoMap" type="com.project.InsightPrep.domain.question.dto.response.QuestionResponse$QuestionsDto">
+        <result property="questionId"    column="question_id"/>
+        <result property="category"      column="category"/>
+        <result property="question"      column="question_content"/>
+        <result property="answerId"      column="answer_id"/>
+        <result property="answer"        column="answer_content"/>
+        <result property="feedbackId"    column="feedback_id"/>
+        <result property="score"         column="score"/>
+        <result property="improvement"   column="improvement"/>
+        <result property="modelAnswer"   column="model_answer"/>
+    </resultMap>
+
+    <select id="findQuestionIdOfMyAnswer" resultType="long">
+        SELECT a.question_id
+        FROM answer a
+        WHERE a.id = #{answerId} AND a.member_id = #{memberId}
+    </select>
+
+    <delete id="deleteMyAnswerById">
+        DELETE FROM answer
+        WHERE id = #{answerId} AND member_id = #{memberId}
+    </delete>
+
+    <update id="resetQuestionStatusIfNoAnswers">
+        UPDATE question q
+        SET status = #{waiting}, updated_at = NOW()
+        WHERE q.id = #{questionId} AND NOT EXISTS (
+            SELECT 1 FROM answer ax WHERE ax.question_id = q.id
+        )
+    </update>
+
 </mapper>

@@ -25,4 +25,21 @@ public class QuestionResponse {
     public static class GptQuestion {
         private String question;
     }
+
+    @Getter
+    @Builder
+    @JsonInclude(Include.NON_NULL)
+    public static class QuestionsDto {
+        private long questionId;
+        private String category;
+        private String question;
+
+        private long answerId;
+        private String answer;
+
+        private long feedbackId;
+        private int score;
+        private String improvement;
+        private String modelAnswer;
+    }
 }
