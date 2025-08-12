@@ -1,5 +1,6 @@
 package com.project.InsightPrep.domain.question.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -7,15 +8,20 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.GptQuestion;
+import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
+import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
-import com.project.InsightPrep.global.gpt.service.GptServiceImpl;
+import com.project.InsightPrep.global.auth.util.SecurityUtil;
+import com.project.InsightPrep.global.gpt.service.GptService;
 import java.lang.reflect.Field;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,10 +33,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class QuestionServiceImplTest {
 
     @Mock
-    private GptServiceImpl gptService;
+    private GptService gptService;
 
     @Mock
     private QuestionMapper questionMapper;
+
+    @Mock
+    private AnswerMapper answerMapper;
+
+    @Mock
+    private SecurityUtil securityUtil;
 
     @InjectMocks
     private QuestionServiceImpl questionService;
@@ -72,5 +84,30 @@ class QuestionServiceImplTest {
 
         // insert가 실제로 호출되었는지 확인
         verify(questionMapper, times(1)).insertQuestion(any(Question.class));
+    }
+
+    @Test
+    @DisplayName("로그인 한 사용자의 답변 및 피드백, 질문 목록 조회")
+    void getQuestions() {
+        // given: 인증 로직 무시 → SecurityUtil만 스텁
+        long memberId = 42L;
+        when(securityUtil.getLoginMemberId()).thenReturn(memberId);
+
+        var dto = QuestionsDto.builder()
+                .questionId(10L).category("NETWORK").question("TCP/UDP?")
+                .answerId(100L).answer("비교")
+                .feedbackId(1000L).score(90).modelAnswer("...").build();
+
+        when(answerMapper.findQuestionsWithFeedback(memberId))
+                .thenReturn(List.of(dto));
+
+        // when
+        var result = questionService.getQuestions();
+
+        // then
+        assertThat(result).hasSize(1);
+        verify(securityUtil).getLoginMemberId();                 // 인증 부분은 호출만 확인
+        verify(answerMapper).findQuestionsWithFeedback(42L);     // 핵심 상호작용 검증
+        verifyNoMoreInteractions(answerMapper, securityUtil);
     }
 }

@@ -61,6 +61,7 @@ public class QuestionController implements QuestionControllerDocs {
 
     @Override
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<ApiResponse<List<QuestionsDto>>> getQuestions() {
         List<QuestionsDto> dto = questionService.getQuestions();
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, dto));
