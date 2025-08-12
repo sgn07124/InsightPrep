@@ -30,5 +30,5 @@ public interface QuestionControllerDocs {
 
     @Operation(summary = "특정 면접 질문 삭제", description = "본인이 답변한 질문들을 리스트로 조회했을 때, 원하는 질문에 대하여 삭제합니다. 해당 질문 삭제 시, 질문에 대한 답변과 피드백 모두 삭제됩니다. "
             + "답변 id로 삭제가 진행되며 피드백이 연쇄 삭제되고, 질문은 상태가 WAITING으로 수정되어 자동으로 삭제됩니다.")
-    public ResponseEntity<ApiResponse<?>> deleteQuestion(@PathVariable long id);
+    public ResponseEntity<ApiResponse<?>> deleteQuestion(@PathVariable long answerId);
 }
