@@ -62,4 +62,23 @@
         <result property="modelAnswer"   column="model_answer"/>
     </resultMap>
 
+    <select id="findQuestionIdOfMyAnswer" resultType="long">
+        SELECT a.question_id
+        FROM answer a
+        WHERE a.id = #{answerId} AND a.member_id = #{memberId}
+    </select>
+
+    <delete id="deleteMyAnswerById">
+        DELETE FROM answer
+        WHERE id = #{answerId} AND member_id = #{memberId}
+    </delete>
+
+    <update id="resetQuestionStatusIfNoAnswers">
+        UPDATE question q
+        SET status = #{waiting}, updated_at = NOW()
+        WHERE q.id = #{questionId} AND NOT EXISTS (
+            SELECT 1 FROM answer ax WHERE ax.question_id = q.id
+        )
+    </update>
+
 </mapper>

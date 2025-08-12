@@ -16,6 +16,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,6 +65,14 @@ public class QuestionController implements QuestionControllerDocs {
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<ApiResponse<List<QuestionsDto>>> getQuestions() {
         List<QuestionsDto> dto = questionService.getQuestions();
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, dto));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_QUESTIONS_SUCCESS, dto));
+    }
+
+    @Override
+    @DeleteMapping("/{answerId}")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<ApiResponse<?>> deleteQuestion(@PathVariable long answerId) {
+        answerService.deleteAnswer(answerId);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.DELETE_QUESTION_SUCCESS));
     }
 }
