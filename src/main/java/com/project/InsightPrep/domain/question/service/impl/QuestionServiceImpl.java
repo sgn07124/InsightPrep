@@ -1,6 +1,6 @@
 package com.project.InsightPrep.domain.question.service.impl;
 
-import com.project.InsightPrep.domain.member.entity.Member;
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.GptQuestion;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionDto;
@@ -53,8 +53,15 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<QuestionsDto> getQuestions() {
+    public PageResponse<QuestionsDto> getQuestions(int page, int size) {
         long memberId = securityUtil.getLoginMemberId();
-        return answerMapper.findQuestionsWithFeedback(memberId);
+
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        int offset = (safePage - 1) * safeSize;
+
+        List<QuestionsDto> content = answerMapper.findQuestionsWithFeedbackPaged(memberId, safeSize, offset);
+        long total = answerMapper.countQuestionsWithFeedback(memberId);
+        return PageResponse.of(content, safePage, safeSize, total);
     }
 }

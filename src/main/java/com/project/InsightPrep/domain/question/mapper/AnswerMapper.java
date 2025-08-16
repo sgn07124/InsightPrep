@@ -12,6 +12,10 @@ public interface AnswerMapper {
 
     List<QuestionsDto> findQuestionsWithFeedback(long memberId);
 
+    List<QuestionsDto> findQuestionsWithFeedbackPaged(@Param("memberId") long memberId, @Param("limit") int limit, @Param("offset") int offset);
+
+    long countQuestionsWithFeedback(@Param("memberId") long memberId);
+
     Long findQuestionIdOfMyAnswer(@Param("answerId") long answerId, @Param("memberId") long memberId);
 
     int deleteMyAnswerById(@Param("answerId") long answerId, @Param("memberId") long memberId);

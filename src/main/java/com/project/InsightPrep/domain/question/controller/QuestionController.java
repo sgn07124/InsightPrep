@@ -4,6 +4,7 @@ import com.project.InsightPrep.domain.question.controller.docs.QuestionControlle
 import com.project.InsightPrep.domain.question.dto.request.AnswerRequest;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.AnswerDto;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.service.AnswerService;
@@ -12,7 +13,6 @@ import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -63,8 +64,11 @@ public class QuestionController implements QuestionControllerDocs {
     @Override
     @GetMapping
     @PreAuthorize("hasAnyRole('USER')")
-    public ResponseEntity<ApiResponse<List<QuestionsDto>>> getQuestions() {
-        List<QuestionsDto> dto = questionService.getQuestions();
+    public ResponseEntity<ApiResponse<PageResponse<QuestionsDto>>> getQuestions(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        PageResponse<QuestionsDto> dto = questionService.getQuestions(page, size);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_QUESTIONS_SUCCESS, dto));
     }
 

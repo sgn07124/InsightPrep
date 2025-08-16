@@ -63,6 +63,13 @@
         <result property="modelAnswer"   column="model_answer"/>
     </resultMap>
 
+    <select id="countQuestionsWithFeedback" resultType="long">
+        SELECT COUNT(*)
+        FROM answer a
+                 INNER JOIN answer_feedback f ON f.answer_id = a.id
+        WHERE a.member_id = #{memberId}
+    </select>
+
     <select id="findQuestionIdOfMyAnswer" resultType="long">
         SELECT a.question_id
         FROM answer a
