@@ -2,6 +2,7 @@ package com.project.InsightPrep.domain.auth.controller.docs;
 
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest;
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
+import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.MeDto;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,4 +30,7 @@ public interface AuthControllerDocs {
 
     @Operation(summary = "로그아웃", description = "로그아웃을 진행하면 쿠키가 삭제됩니다.")
     public ResponseEntity<ApiResponse<?>> logout (HttpServletRequest request, HttpServletResponse response);
+
+    @Operation(summary = "세션 조회", description = "로그인 한 사용자가 현재 나의 세션이 유효한지, 그리고 로그인한 사용자가 누구인지 조회합니다.")
+    public ResponseEntity<ApiResponse<MeDto>> getSessionInfo(HttpSession session);
 }

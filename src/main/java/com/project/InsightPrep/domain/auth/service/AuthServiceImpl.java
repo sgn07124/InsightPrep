@@ -3,12 +3,14 @@ package com.project.InsightPrep.domain.auth.service;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.LoginDto;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.signupDto;
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
+import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.MeDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
 import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
+import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper authMapper;
     private final EmailService emailService;
+    private final SecurityUtil securityUtil;
 
     @Override
     @Transactional
@@ -81,6 +84,19 @@ public class AuthServiceImpl implements AuthService {
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
         return new LoginResultDto(member.getId(), member.getNickname());
+    }
+
+    @Override
+    public MeDto getSessionInfo(HttpSession session) {
+        if (session == null) {
+            throw new AuthException(AuthErrorCode.NEED_LOGIN_ERROR);
+        }
+
+        Member member = securityUtil.getAuthenticatedMember();
+        return MeDto.builder()
+                .memberId(member.getId())
+                .nickname(member.getNickname())
+                .build();
     }
 
     private void validateSignUp(signupDto dto) {

@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.auth.controller;
 import com.project.InsightPrep.domain.auth.controller.docs.AuthControllerDocs;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest;
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
+import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.MeDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -78,5 +80,12 @@ public class AuthController implements AuthControllerDocs {
         response.addCookie(cookie);
 
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.LOGOUT_SUCCESS));
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<MeDto>> getSessionInfo(HttpSession session) {
+        MeDto dto = authService.getSessionInfo(session);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.ME_SUCCESS, dto));
     }
 }
