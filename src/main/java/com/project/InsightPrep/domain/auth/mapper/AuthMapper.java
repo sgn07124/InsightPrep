@@ -15,4 +15,7 @@ public interface AuthMapper {
     Optional<Member> findByEmail(String email);
 
     Optional<Member> findById(@Param("id") Long id);
+
+    int updatePasswordByEmail(@Param("email") String email,
+                              @Param("passwordHash") String passwordHash);
 }

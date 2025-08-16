@@ -5,6 +5,7 @@ import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.PasswordMapper;
+import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import jakarta.mail.MessagingException;
 import java.time.LocalDateTime;
@@ -116,8 +117,39 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     @Override
-    public void resetPassword(String s, String s1) {
+    @Transactional
+    public void resetPassword(String resetToken, String newRawPassword) {
+        // 1) 토큰으로 레코드 조회
+        PasswordVerification row = passwordMapper.findByResetToken(resetToken);
+        if (row == null) {
+            throw new AuthException(AuthErrorCode.RESET_TOKEN_INVALID);
+        }
 
+        // 2) 토큰 사용 여부/만료 검사
+        if (row.isResetUsed()) {
+            throw new AuthException(AuthErrorCode.RESET_TOKEN_ALREADY_USED);
+        }
+        if (row.getResetExpiresAt() == null || row.getResetExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new AuthException(AuthErrorCode.RESET_TOKEN_EXPIRED);
+        }
+
+        // 3) 멤버 조회(존재 확인)
+        String email = row.getEmail();
+        Member member = authMapper.findByEmail(email).orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+
+        // 4) 패스워드 해시 & 저장
+        String hashed = securityUtil.encode(newRawPassword);
+        int updated = authMapper.updatePasswordByEmail(email, hashed);
+        if (updated != 1) {
+            throw new AuthException(AuthErrorCode.SERVER_ERROR);
+        }
+
+        // 5) 토큰 1회용 처리 + 무효화(선호에 따라 토큰 null 로도)
+        int done = passwordMapper.markResetTokenUsed(resetToken);
+        if (done != 1) {
+            // 여기서 실패하면 롤백 유도
+            throw new AuthException(AuthErrorCode.SERVER_ERROR);
+        }
     }
 
     // 대문자+숫자 6자리

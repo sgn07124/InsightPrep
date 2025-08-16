@@ -26,4 +26,8 @@ public interface PasswordMapper {
                          @Param("resetToken") String resetToken,
                          @Param("resetUsed") boolean resetUsed,
                          @Param("resetExpiresAt") LocalDateTime resetExpiresAt);
+
+    PasswordVerification findByResetToken(@Param("resetToken") String resetToken);
+
+    int markResetTokenUsed(@Param("resetToken") String resetToken);
 }

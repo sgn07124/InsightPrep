@@ -50,4 +50,17 @@ public class SecurityUtil {
         }
         return passwordEncoder.matches(raw, encoded);
     }
+
+    /**
+     * Encode a raw value using the configured PasswordEncoder.
+     * @param raw the plain text value to encode (must not be null)
+     * @return encoded hash
+     * @throws IllegalArgumentException if raw is null
+     */
+    public String encode(String raw) {
+        if (raw == null) {
+            throw new IllegalArgumentException("raw must not be null");
+        }
+        return passwordEncoder.encode(raw);
+    }
 }

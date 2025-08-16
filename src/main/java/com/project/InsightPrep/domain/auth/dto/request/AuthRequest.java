@@ -78,7 +78,7 @@ public class AuthRequest {
 
     public static record ResetReq(
             @NotBlank String resetToken,
-            @NotBlank @Size(min = 8, max = 64) String newPassword
+            @NotBlank(message = "비밀번호는 필수입니다.") @Pattern(regexp = "^(?=.*[A-Z])(?=.*[@$!%*?&]).{8,16}$", message = "비밀번호는 영문 소문자, 대문자, 특수 문자로 구성되어야 합니다.") String newPassword
     ) {}
 
     public static record ResetTokenRes(String resetToken) {}
