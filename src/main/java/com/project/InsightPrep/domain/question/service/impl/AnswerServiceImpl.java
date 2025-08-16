@@ -2,6 +2,7 @@ package com.project.InsightPrep.domain.question.service.impl;
 
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.question.dto.request.AnswerRequest.AnswerDto;
+import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
@@ -29,7 +30,7 @@ public class AnswerServiceImpl implements AnswerService {
 
     @Override
     @Transactional
-    public void saveAnswer(AnswerDto dto, Long questionId) {
+    public AnswerResponse.AnswerDto saveAnswer(AnswerDto dto, Long questionId) {
         Member member = securityUtil.getAuthenticatedMember();
         Question question = questionMapper.findById(questionId);
 
@@ -42,6 +43,8 @@ public class AnswerServiceImpl implements AnswerService {
         questionMapper.updateStatus(questionId, AnswerStatus.ANSWERED.name());
         answerMapper.insertAnswer(answer);
         feedbackService.saveFeedback(answer);
+        return AnswerResponse.AnswerDto.builder()
+                .answerId(answer.getId()).build();
     }
 
     @Override

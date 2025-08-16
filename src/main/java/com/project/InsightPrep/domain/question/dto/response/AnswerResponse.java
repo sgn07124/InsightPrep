@@ -12,8 +12,7 @@ public class AnswerResponse {
     @JsonInclude(Include.NON_NULL)
     public static class AnswerDto {
 
-        private long id;
-        private String content;
+        private long answerId;
     }
 
     @Getter

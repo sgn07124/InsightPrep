@@ -45,8 +45,8 @@ public class QuestionController implements QuestionControllerDocs {
     @PostMapping("/{questionId}/answer")
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<ApiResponse<AnswerDto>> saveAnswer(@RequestBody @Valid AnswerRequest.AnswerDto dto, @PathVariable Long questionId) {
-        answerService.saveAnswer(dto, questionId);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SAVE_ANSWER_SUCCESS));
+        AnswerDto answerDto = answerService.saveAnswer(dto, questionId);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SAVE_ANSWER_SUCCESS, answerDto));
     }
 
     @Override
