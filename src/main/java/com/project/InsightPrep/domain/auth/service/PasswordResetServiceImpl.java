@@ -1,14 +1,20 @@
 package com.project.InsightPrep.domain.auth.service;
 
+import com.project.InsightPrep.domain.auth.entity.PasswordVerification;
+import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
+import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.PasswordMapper;
+import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import jakarta.mail.MessagingException;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -21,8 +27,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final EmailService emailService;
     private final PasswordMapper passwordMapper;
     private final AuthMapper authMapper;
+    private final SecurityUtil securityUtil;
 
     @Override
+    @Transactional
     public void requestOtp(String email) {
         boolean exists = authMapper.existEmail(email);
         // exists=false여도 "요청 접수" 응답은 동일하게. (계정 존재 여부 노출 방지)
@@ -61,8 +69,50 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     @Override
-    public String verifyOtp(String email, String code) {
-        return null;
+    @Transactional
+    public String verifyOtp(String email, String inputCode) {
+        // 1. 저장된 OTP 가져오기
+        PasswordVerification otp = passwordMapper.findByEmail(email);
+        if (otp == null) {
+            throw new AuthException(AuthErrorCode.CODE_NOT_MATCH_ERROR);
+        }
+
+        // 2. 이미 사용 여부
+        if (otp.isUsed()) {
+            throw new AuthException(AuthErrorCode.OTP_ALREADY_USED);
+        }
+
+        // 3. 만료 여부
+        if (otp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new AuthException(AuthErrorCode.EXPIRED_CODE_ERROR);
+        }
+
+        // 4. 코드 일치 여부 검증
+        boolean matched = securityUtil.matches(inputCode, otp.getCodeHash());
+        if (!matched) {
+            int remaining = otp.getAttemptsLeft() - 1;
+            if (remaining <= 0) {
+                passwordMapper.updateOtpAsUsed(email); // 실패 누적 → 사용 불가
+                throw new AuthException(AuthErrorCode.OTP_INVALID);
+            } else {
+                passwordMapper.updateAttempts(email, remaining);
+                throw new AuthException(AuthErrorCode.OTP_INVALID_ATTEMPT);
+            }
+        }
+
+        // 5. 성공 처리: OTP 사용 처리 및 비밀번호 재설정 토큰 발급
+        passwordMapper.updateOtpAsUsed(email);
+
+        String token = UUID.randomUUID().toString();
+        // 유효시간은 OTP와 별도로 관리(예: 15분)
+        LocalDateTime tokenExpiresAt = LocalDateTime.now().plusMinutes(15);
+        int n = passwordMapper.updateResetToken(email, token, false, tokenExpiresAt);
+
+        if (n != 1) {
+            throw new AuthException(AuthErrorCode.OTP_INVALID_ATTEMPT);
+        }
+
+        return token;
     }
 
     @Override

@@ -18,12 +18,15 @@ public enum AuthErrorCode implements BaseErrorCode {
     EMAIL_VERIFICATION_ERROR("EMAIL_VERIFICATION_ERROR", HttpStatus.BAD_REQUEST, "인증된 이메일이 아닙니다."),
     EXPIRED_CODE_ERROR("LINK_EXPIRED_ERROR", HttpStatus.BAD_REQUEST, "코드 입력 시간이 만료되었습니다."),
     ALREADY_SEND_CODE_ERROR("ALREADY_SEND_CODE_ERROR", HttpStatus.BAD_REQUEST, "이미 유효한 인증 코드가 발급되었습니다."),
+    OTP_ALREADY_USED("OTP_ALREADY_USED", HttpStatus.BAD_REQUEST, "이미 사용한 인증 코드입니다."),
     CODE_NOT_MATCH_ERROR("CODE_NOT_MATCH_ERROR", HttpStatus.BAD_REQUEST, "인증 코드가 일치하지 않습니다"),
     UNAUTHORIZED("UNAUTHORIZED", HttpStatus.UNAUTHORIZED, "비로그인 상태입니다."),
     MEMBER_NOT_FOUND("MEMBER_NOT_FOUND", HttpStatus.BAD_REQUEST, "회원을 찾을 수 없습니다."),
     NOT_AUTHENTICATED("NOT_AUTHENTICATED", HttpStatus.UNAUTHORIZED, "로그인 정보가 없습니다."),
     INVALID_AUTHENTICATION_PRINCIPAL("INVALID_AUTHENTICATION_PRINCIPAL", HttpStatus.FORBIDDEN, "인증 정보가 올바르지 않습니다."),
-    NEED_LOGIN_ERROR("NEED_LOGIN_ERROR", HttpStatus.BAD_REQUEST, "로그인이 필요합니다.");
+    NEED_LOGIN_ERROR("NEED_LOGIN_ERROR", HttpStatus.BAD_REQUEST, "로그인이 필요합니다."),
+    OTP_INVALID("OTP_INVALID", HttpStatus.FORBIDDEN, "실패가 누적되어 인증 번호가 만료되었습니다."),
+    OTP_INVALID_ATTEMPT("OTP_INVALID_ATTEMPT", HttpStatus.BAD_REQUEST, "유효하지 않은 시도입니다.");
 
 
     private final String code;

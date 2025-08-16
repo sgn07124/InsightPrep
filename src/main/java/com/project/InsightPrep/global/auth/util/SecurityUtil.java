@@ -9,12 +9,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Component
 @RequiredArgsConstructor
 public class SecurityUtil {
 
     private final AuthMapper authMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public Long getLoginMemberId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -36,5 +38,16 @@ public class SecurityUtil {
         Long memberId = getLoginMemberId();
         return authMapper.findById(memberId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    /**
+     * Compare a raw value with an encoded hash using the configured PasswordEncoder.
+     * Returns false if either argument is null.
+     */
+    public boolean matches(String raw, String encoded) {
+        if (raw == null || encoded == null) {
+            return false;
+        }
+        return passwordEncoder.matches(raw, encoded);
     }
 }

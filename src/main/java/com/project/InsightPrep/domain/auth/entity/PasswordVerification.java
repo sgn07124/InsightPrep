@@ -48,4 +48,14 @@ public class PasswordVerification {
     private LocalDateTime createdAt;
 
     private LocalDateTime usedAt;
+
+    // 비밀번호 재설정 토큰(OTP 성공 후 발급)
+    @Column(name = "reset_token", length = 255)
+    private String resetToken;
+
+    @Column(name = "reset_expires_at")
+    private LocalDateTime resetExpiresAt;
+
+    @Column(name = "reset_used", nullable = false)
+    private boolean resetUsed;
 }

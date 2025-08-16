@@ -93,7 +93,7 @@ public class AuthController implements AuthControllerDocs {
     }
 
     @Override
-    @PostMapping("/opt/sendEmail")
+    @PostMapping("/otp/sendEmail")
     public ResponseEntity<ApiResponse<Void>> requestOtp(@RequestBody @Valid AuthRequest.MemberEmailDto req) {
         passwordResetService.requestOtp(req.getEmail());
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SEND_EMAIL_SUCCESS)); // 존재 여부 노출 금지

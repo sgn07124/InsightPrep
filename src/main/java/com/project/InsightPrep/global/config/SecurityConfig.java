@@ -52,7 +52,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**",
-                                "/auth/login", "/auth/signup", "/auth/sendEmail", "/auth/verifyEmail", "/auth/opt/**", "/auth/password/reset").permitAll()
+                                "/auth/login", "/auth/signup", "/auth/sendEmail", "/auth/verifyEmail", "/auth/otp/**", "/auth/password/reset").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
