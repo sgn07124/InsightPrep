@@ -5,12 +5,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.GptQuestion;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
@@ -25,6 +28,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -87,10 +91,14 @@ class QuestionServiceImplTest {
     }
 
     @Test
-    @DisplayName("로그인 한 사용자의 답변 및 피드백, 질문 목록 조회")
-    void getQuestions() {
-        // given: 인증 로직 무시 → SecurityUtil만 스텁
+    @DisplayName("페이지네이션: page=2, size=10 → offset=10, total=23 → totalPages=3")
+    void getQuestions_paged_ok() {
+        // given
         long memberId = 42L;
+        int page = 2;
+        int size = 10;
+        int offset = (Math.max(page, 1) - 1) * size; // 10
+
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
 
         var dto = QuestionsDto.builder()
@@ -98,16 +106,61 @@ class QuestionServiceImplTest {
                 .answerId(100L).answer("비교")
                 .feedbackId(1000L).score(90).modelAnswer("...").build();
 
-        when(answerMapper.findQuestionsWithFeedback(memberId))
+        when(answerMapper.findQuestionsWithFeedbackPaged(memberId, size, offset))
                 .thenReturn(List.of(dto));
+        when(answerMapper.countQuestionsWithFeedback(memberId))
+                .thenReturn(23L); // 총 23건 → 10개씩이면 총 3페이지
 
         // when
-        var result = questionService.getQuestions();
+        PageResponse<QuestionsDto> res = questionService.getQuestions(page, size);
 
         // then
-        assertThat(result).hasSize(1);
-        verify(securityUtil).getLoginMemberId();                 // 인증 부분은 호출만 확인
-        verify(answerMapper).findQuestionsWithFeedback(42L);     // 핵심 상호작용 검증
+        assertThat(res).isNotNull();
+        assertThat(res.getContent()).hasSize(1);
+        assertThat(res.getPage()).isEqualTo(2);
+        assertThat(res.getSize()).isEqualTo(10);
+        assertThat(res.getTotalElements()).isEqualTo(23L);
+        assertThat(res.getTotalPages()).isEqualTo(3L);
+        assertThat(res.isFirst()).isFalse();
+        assertThat(res.isLast()).isFalse();
+
+        InOrder inOrder = inOrder(securityUtil, answerMapper);
+        inOrder.verify(securityUtil).getLoginMemberId();
+        inOrder.verify(answerMapper).findQuestionsWithFeedbackPaged(eq(memberId), eq(size), eq(offset));
+        inOrder.verify(answerMapper).countQuestionsWithFeedback(eq(memberId));
         verifyNoMoreInteractions(answerMapper, securityUtil);
+    }
+
+    @Test
+    @DisplayName("size 상한(최대 50) 적용: page=1, size=100 → limit=50, offset=0")
+    void getQuestions_sizeCappedTo50() {
+        // given
+        long memberId = 42L;
+        int page = 1;
+        int requestedSize = 100;   // 사용자가 크게 요청
+        int safeSize = 50;         // 서비스 로직 상한
+        int offset = 0;
+
+        when(securityUtil.getLoginMemberId()).thenReturn(memberId);
+
+        when(answerMapper.findQuestionsWithFeedbackPaged(memberId, safeSize, offset))
+                .thenReturn(List.of());
+        when(answerMapper.countQuestionsWithFeedback(memberId))
+                .thenReturn(0L);
+
+        // when
+        PageResponse<QuestionsDto> res = questionService.getQuestions(page, requestedSize);
+
+        // then
+        assertThat(res.getPage()).isEqualTo(1);
+        assertThat(res.getSize()).isEqualTo(50); // 캡 확인
+        assertThat(res.getTotalElements()).isEqualTo(0L);
+        assertThat(res.getTotalPages()).isEqualTo(0L);
+        assertThat(res.isFirst()).isTrue();
+        assertThat(res.isLast()).isTrue();
+
+        verify(answerMapper).findQuestionsWithFeedbackPaged(memberId, safeSize, offset);
+        verify(answerMapper).countQuestionsWithFeedback(memberId);
+        verifyNoMoreInteractions(answerMapper);
     }
 }
