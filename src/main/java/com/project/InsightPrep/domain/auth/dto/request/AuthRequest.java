@@ -70,4 +70,16 @@ public class AuthRequest {
 
         private boolean autoLogin;
     }
+
+    public record VerifyOtpReq(
+            @NotBlank @Email String email,
+            @NotBlank String code
+    ) {}
+
+    public static record ResetReq(
+            @NotBlank String resetToken,
+            @NotBlank @Size(min = 8, max = 64) String newPassword
+    ) {}
+
+    public static record ResetTokenRes(String resetToken) {}
 }

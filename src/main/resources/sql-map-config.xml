@@ -9,5 +9,6 @@
         <typeAlias alias="question" type="com.project.InsightPrep.domain.question.entity.Question"/>
         <typeAlias alias="answer" type="com.project.InsightPrep.domain.question.entity.Answer"/>
         <typeAlias alias="feedback" type="com.project.InsightPrep.domain.question.entity.AnswerFeedback"/>
+        <typeAlias alias="password" type="com.project.InsightPrep.domain.auth.entity.PasswordVerification"/>
     </typeAliases>
 </configuration>
