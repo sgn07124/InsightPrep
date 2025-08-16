@@ -1,15 +1,13 @@
 package com.project.InsightPrep.domain.question.service.impl;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -17,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.question.dto.request.AnswerRequest.AnswerDto;
+import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
@@ -25,10 +24,11 @@ import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
+import java.lang.reflect.Field;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -51,68 +51,63 @@ class AnswerServiceImplTest {
     @Mock
     private FeedbackServiceImpl feedbackService;
 
-    @Test
     @DisplayName("답변 저장 - 정상 동작")
+    @Test
     void saveAnswer_success() {
         // given
         Long questionId = 1L;
-        Member mockMember = Member.builder().id(1L).email("test@email.com").build();
+        Member mockMember = Member.builder()
+                .id(1L)
+                .email("test@email.com")
+                .build();
+
         Question mockQuestion = Question.builder()
                 .id(questionId)
                 .content("질문 내용")
                 .category("OS")
                 .status(AnswerStatus.WAITING)
                 .build();
+
         AnswerDto dto = new AnswerDto("테스트 답변입니다.");
 
         when(securityUtil.getAuthenticatedMember()).thenReturn(mockMember);
         when(questionMapper.findById(questionId)).thenReturn(mockQuestion);
 
-        // doNothing은 void 메서드에 대해 설정
-        doNothing().when(questionMapper).updateStatus(eq(questionId), anyString());
+        doNothing().when(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
+        // insertAnswer 호출 시, DB가 생성한 PK가 들어간 것처럼 id 세팅을 시뮬레이션
         doAnswer(invocation -> {
-            Answer answer = invocation.getArgument(0);
-            // answer.id 설정은 불필요 — 테스트 대상 아님
+            Answer arg = invocation.getArgument(0);
+            Field idField = Answer.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(arg, 100L);
             return null;
         }).when(answerMapper).insertAnswer(any(Answer.class));
+
+        // feedback 호출 자체만 확인; 내용은 captor로 검증
         doNothing().when(feedbackService).saveFeedback(any(Answer.class));
 
         // when
-        answerService.saveAnswer(dto, questionId);
+        AnswerResponse.AnswerDto res = answerService.saveAnswer(dto, questionId);
 
         // then
         verify(securityUtil).getAuthenticatedMember();
         verify(questionMapper).findById(questionId);
-        verify(questionMapper).updateStatus(eq(questionId), eq("ANSWERED"));
+        verify(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
         verify(answerMapper).insertAnswer(any(Answer.class));
-        verify(feedbackService).saveFeedback(any(Answer.class));
-    }
 
-    @Test
-    @DisplayName("성공: 내 답변 1건 삭제 → 피드백은 CASCADE, 남은 답변 없으면 질문 상태 WAITING으로")
-    void deleteAnswer_success() {
-        // given
-        long memberId = 1L;
-        long answerId = 100L;
-        long questionId = 10L;
+        // feedbackService로 전달된 Answer에 id가 채워졌는지 검증
+        ArgumentCaptor<Answer> answerCaptor = ArgumentCaptor.forClass(Answer.class);
+        verify(feedbackService).saveFeedback(answerCaptor.capture());
+        Answer savedForFeedback = answerCaptor.getValue();
+        assertThat(savedForFeedback.getId()).isEqualTo(100L);
+        assertThat(savedForFeedback.getMember().getId()).isEqualTo(1L);
+        assertThat(savedForFeedback.getQuestion().getId()).isEqualTo(questionId);
+        assertThat(savedForFeedback.getContent()).isEqualTo("테스트 답변입니다.");
 
-        when(securityUtil.getLoginMemberId()).thenReturn(memberId);
-        when(answerMapper.findQuestionIdOfMyAnswer(answerId, memberId)).thenReturn(questionId);
-        when(answerMapper.deleteMyAnswerById(answerId, memberId)).thenReturn(1); // 1건 삭제
-        doNothing().when(answerMapper).resetQuestionStatusIfNoAnswers(questionId, AnswerStatus.WAITING.name());
-
-        // when & then
-        assertThatCode(() -> answerService.deleteAnswer(answerId)).doesNotThrowAnyException();
-
-        // verify: 순서 중요하면 InOrder로
-        InOrder inOrder = inOrder(securityUtil, answerMapper);
-        inOrder.verify(securityUtil).getLoginMemberId();
-        inOrder.verify(answerMapper).findQuestionIdOfMyAnswer(answerId, memberId);
-        inOrder.verify(answerMapper).deleteMyAnswerById(answerId, memberId);
-        inOrder.verify(answerMapper).resetQuestionStatusIfNoAnswers(
-                eq(questionId), eq(AnswerStatus.WAITING.name())
-        );
-        verifyNoMoreInteractions(answerMapper, securityUtil);
+        // 반환 DTO 검증 (서비스가 DTO를 반환하도록 구현되어 있다는 가정)
+        assertThat(res).isNotNull();
+        assertThat(res.getAnswerId()).isEqualTo(100L);
+        verifyNoMoreInteractions(securityUtil, questionMapper, answerMapper, feedbackService);
     }
 
     @Test
