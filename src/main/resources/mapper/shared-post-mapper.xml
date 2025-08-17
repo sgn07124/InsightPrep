@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.InsightPrep.domain.post.mapper.SharedPostMapper">
+
+    <insert id="insertSharedPost">
+        <selectKey resultType="long" keyProperty="id" order="AFTER">
+            SELECT currval(pg_get_serial_sequence('shared_post','id'))
+        </selectKey>
+        INSERT INTO shared_post (
+        created_at, updated_at, title, content, answer_id, member_id, status
+        ) VALUES (
+        NOW(), NOW(), #{title}, #{content}, #{answerId}, #{memberId}, #{status}
+        )
+    </insert>
+
+    <select id="lastInsertedId" resultType="long">
+        SELECT currval(pg_get_serial_sequence('shared_post','id'))
+    </select>
+
+    <select id="existsByAnswerId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM shared_post WHERE answer_id = #{answerId}
+        )
+    </select>
+
+</mapper>

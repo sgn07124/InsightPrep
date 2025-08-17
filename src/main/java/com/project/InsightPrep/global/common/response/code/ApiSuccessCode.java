@@ -22,7 +22,9 @@ public enum ApiSuccessCode {
     FEEDBACK_PENDING("FEEDBACK_PENDING", HttpStatus.ACCEPTED, "피드백 생성 중입니다."),
     GET_QUESTIONS_SUCCESS("GET_QUESTIONS_SUCCESS", HttpStatus.OK, "질문 리스트 조회 성공"),
     DELETE_QUESTION_SUCCESS("DELETE_QUESTION_SUCCESS", HttpStatus.OK, "질문과 답변, 피드백 삭제 성공"),
-    ME_SUCCESS("ME_SUCCESS", HttpStatus.OK, "로그인 상태입니다.");
+    ME_SUCCESS("ME_SUCCESS", HttpStatus.OK, "로그인 상태입니다."),
+
+    CREATE_POST_SUCCESS("CREATE_POST_SUCCESS", HttpStatus.OK, "글 생성 성공");
 
     private final String code;
     private final HttpStatus status;
