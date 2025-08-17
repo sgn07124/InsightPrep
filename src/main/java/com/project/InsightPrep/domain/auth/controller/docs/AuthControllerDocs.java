@@ -1,7 +1,9 @@
 package com.project.InsightPrep.domain.auth.controller.docs;
 
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest;
+import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.ResetTokenRes;
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
+import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.MeDto;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,4 +31,16 @@ public interface AuthControllerDocs {
 
     @Operation(summary = "로그아웃", description = "로그아웃을 진행하면 쿠키가 삭제됩니다.")
     public ResponseEntity<ApiResponse<?>> logout (HttpServletRequest request, HttpServletResponse response);
+
+    @Operation(summary = "세션 조회", description = "로그인 한 사용자가 현재 나의 세션이 유효한지, 그리고 로그인한 사용자가 누구인지 조회합니다.")
+    public ResponseEntity<ApiResponse<MeDto>> getSessionInfo(HttpSession session);
+
+    @Operation(summary = "비밀번호 재설정 인증번호 전송", description = "비밀번호 재전송을 하기 위해 인증번호를 해당 메일로 전송합니다.")
+    public ResponseEntity<ApiResponse<Void>> requestOtp(@RequestBody @Valid AuthRequest.MemberEmailDto req);
+
+    @Operation(summary = "비밀번호 재설정 인증번호 인증", description = "비밀번호 재설정을 위한 인증번호를 인증합니다.")
+    public ResponseEntity<ApiResponse<ResetTokenRes>> verifyOtp(@RequestBody @Valid AuthRequest.VerifyOtpReq req);
+
+    @Operation(summary = "비밀번호 재설정", description = "비밀번호를 재설정합니다.")
+    public ResponseEntity<ApiResponse<Void>> reset(@RequestBody @Valid AuthRequest.ResetReq req);
 }

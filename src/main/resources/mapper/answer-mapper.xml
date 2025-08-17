@@ -3,12 +3,13 @@
 
 <mapper namespace="com.project.InsightPrep.domain.question.mapper.AnswerMapper">
 
-    <insert id="insertAnswer" parameterType="answer">
-        <selectKey keyProperty="id" resultType="long" order="AFTER">
-            SELECT currval(pg_get_serial_sequence('answer', 'id'))
-        </selectKey>
+    <insert id="insertAnswer" parameterType="answer" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <!-- <selectKey keyProperty="id" resultType="long" order="AFTER"> -->
+        <!--     SELECT currval(pg_get_serial_sequence('answer', 'id')) -->
+        <!-- </selectKey> -->
         INSERT INTO answer (created_at, updated_at, member_id, question_id, content)
         VALUES (NOW(), NOW(), #{member.id}, #{question.id}, #{content})
+        RETURNING id
     </insert>
 
     <select id="findQuestionsWithFeedback" resultMap="QuestionsDtoMap">
@@ -61,6 +62,13 @@
         <result property="improvement"   column="improvement"/>
         <result property="modelAnswer"   column="model_answer"/>
     </resultMap>
+
+    <select id="countQuestionsWithFeedback" resultType="long">
+        SELECT COUNT(*)
+        FROM answer a
+                 INNER JOIN answer_feedback f ON f.answer_id = a.id
+        WHERE a.member_id = #{memberId}
+    </select>
 
     <select id="findQuestionIdOfMyAnswer" resultType="long">
         SELECT a.question_id

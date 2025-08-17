@@ -1,7 +1,10 @@
 package com.project.InsightPrep.domain.auth.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +17,7 @@ import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResult
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.service.AuthService;
+import com.project.InsightPrep.domain.auth.service.PasswordResetService;
 import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import com.project.InsightPrep.domain.auth.service.EmailService;
 import com.project.InsightPrep.domain.member.entity.Member;
@@ -53,6 +57,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private CustomAuthenticationEntryPoint authenticationEntryPoint;
+
+    @MockitoBean
+    private PasswordResetService passwordResetService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -249,6 +256,130 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("LOGOUT_SUCCESS"))
                 .andExpect(jsonPath("$.message").value("로그아웃 성공"));
+    }
+
+    @Test
+    @DisplayName("OTP 이메일 요청 - 항상 200 (존재 여부 노출 금지)")
+    void requestOtp_success_always200() throws Exception {
+        // given
+        AuthRequest.MemberEmailDto req = new AuthRequest.MemberEmailDto();
+        req.setEmail("test@example.com");
+
+        doNothing().when(passwordResetService).requestOtp("test@example.com");
+
+        // when & then
+        mockMvc.perform(post("/auth/otp/sendEmail")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("SEND_EMAIL_SUCCESS"));
+    }
+
+    @Test
+    @DisplayName("OTP 인증 성공 - 토큰 반환")
+    void verifyOtp_success_returnsToken() throws Exception {
+        // given
+        String email = "test@example.com";
+        String code = "ABC123";
+        String token = "reset-token-123";
+
+        AuthRequest.VerifyOtpReq req = new AuthRequest.VerifyOtpReq(email, code);
+
+        given(passwordResetService.verifyOtp(email, code)).willReturn(token);
+
+        // when & then
+        mockMvc.perform(post("/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("VERIFIED_EMAIL_SUCCESS"))
+                .andExpect(jsonPath("$.result.resetToken").value(token));
+    }
+
+    @Test
+    @DisplayName("OTP 인증 실패 - 코드 불일치")
+    void verifyOtp_fail_codeNotMatch() throws Exception {
+        // given
+        String email = "test@example.com";
+        String code = "WRONG";
+        AuthRequest.VerifyOtpReq req = new AuthRequest.VerifyOtpReq(email, code);
+
+        given(passwordResetService.verifyOtp(email, code))
+                .willThrow(new AuthException(AuthErrorCode.CODE_NOT_MATCH_ERROR));
+
+        // when & then
+        mockMvc.perform(post("/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("CODE_NOT_MATCH_ERROR"));
+    }
+
+    @Test
+    @DisplayName("OTP 인증 실패 - 만료됨")
+    void verifyOtp_fail_expired() throws Exception {
+        // given
+        AuthRequest.VerifyOtpReq req = new AuthRequest.VerifyOtpReq("test@example.com", "ABC123");
+
+        given(passwordResetService.verifyOtp(anyString(), anyString()))
+                .willThrow(new AuthException(AuthErrorCode.EXPIRED_CODE_ERROR));
+
+        // when & then
+        mockMvc.perform(post("/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("EXPIRED_CODE_ERROR"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 재설정 성공")
+    void resetPassword_success() throws Exception {
+        // given
+        AuthRequest.ResetReq req = new AuthRequest.ResetReq("reset-token-123", "NewPassword1!");
+
+        doNothing().when(passwordResetService).resetPassword("reset-token-123", "NewPassword1!");
+
+        // when & then
+        mockMvc.perform(post("/auth/password/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("SUCCESS"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 재설정 실패 - 토큰 무효")
+    void resetPassword_fail_invalidToken() throws Exception {
+        // given
+        AuthRequest.ResetReq req = new AuthRequest.ResetReq("bad-token", "NewPassword1!");
+
+        doThrow(new AuthException(AuthErrorCode.RESET_TOKEN_INVALID))
+                .when(passwordResetService).resetPassword("bad-token", "NewPassword1!");
+
+        // when & then
+        mockMvc.perform(post("/auth/password/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("RESET_TOKEN_INVALID"));
+    }
+
+    @Test
+    @DisplayName("비밀번호 재설정 실패 - 토큰 만료")
+    void resetPassword_fail_expiredToken() throws Exception {
+        // given
+        AuthRequest.ResetReq req = new AuthRequest.ResetReq("expired-token", "NewPassword1!");
+
+        doThrow(new AuthException(AuthErrorCode.RESET_TOKEN_EXPIRED))
+                .when(passwordResetService).resetPassword("expired-token", "NewPassword1!");
+
+        // when & then
+        mockMvc.perform(post("/auth/password/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("RESET_TOKEN_EXPIRED"));
     }
 
     // 테스트에서 인증 객체 설정을 위한 헬퍼 메서드

@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +27,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -41,6 +43,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable) // 개발 중 Swagger 등 요청 허용
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .anonymous(AbstractHttpConfigurer::disable)  // 익명 세션 미적용
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)  // 세션 사용 가능하도록 설정
@@ -49,7 +52,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**",
-                                "/auth/login", "/auth/signup", "/auth/sendEmail", "/auth/verifyEmail").permitAll()
+                                "/auth/login", "/auth/signup", "/auth/sendEmail", "/auth/verifyEmail", "/auth/otp/**", "/auth/password/reset").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

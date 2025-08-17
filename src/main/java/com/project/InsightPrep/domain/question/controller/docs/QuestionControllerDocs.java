@@ -3,15 +3,17 @@ package com.project.InsightPrep.domain.question.controller.docs;
 import com.project.InsightPrep.domain.question.dto.request.AnswerRequest;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.AnswerDto;
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
+import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Question", description = "Question 관련 API")
 public interface QuestionControllerDocs {
@@ -26,7 +28,10 @@ public interface QuestionControllerDocs {
     public ResponseEntity<ApiResponse<AnswerResponse.FeedbackDto>> getFeedback(@PathVariable long answerId);
 
     @Operation(summary = "면접 질문들 조회", description = "본인이 답변한 질문들을 리스트로 조회합니다.")
-    public ResponseEntity<ApiResponse<List<QuestionResponse.QuestionsDto>>> getQuestions();
+    public ResponseEntity<ApiResponse<PageResponse<QuestionsDto>>> getQuestions(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    );
 
     @Operation(summary = "특정 면접 질문 삭제", description = "본인이 답변한 질문들을 리스트로 조회했을 때, 원하는 질문에 대하여 삭제합니다. 해당 질문 삭제 시, 질문에 대한 답변과 피드백 모두 삭제됩니다. "
             + "답변 id로 삭제가 진행되며 피드백이 연쇄 삭제되고, 질문은 상태가 WAITING으로 수정되어 자동으로 삭제됩니다.")

@@ -27,4 +27,12 @@ public class AuthResponse {
         private Long memberId;
         private String nickname;
     }
+
+    @Getter
+    @Builder
+    @JsonInclude(Include.NON_NULL)
+    public static class MeDto {
+        private Long memberId;
+        private String nickname;
+    }
 }
