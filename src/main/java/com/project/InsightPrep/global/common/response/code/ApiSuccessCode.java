@@ -24,7 +24,8 @@ public enum ApiSuccessCode {
     DELETE_QUESTION_SUCCESS("DELETE_QUESTION_SUCCESS", HttpStatus.OK, "질문과 답변, 피드백 삭제 성공"),
     ME_SUCCESS("ME_SUCCESS", HttpStatus.OK, "로그인 상태입니다."),
 
-    CREATE_POST_SUCCESS("CREATE_POST_SUCCESS", HttpStatus.OK, "글 생성 성공");
+    CREATE_POST_SUCCESS("CREATE_POST_SUCCESS", HttpStatus.OK, "글 생성 성공"),
+    GET_POST_SUCCESS("GET_POST_SUCCESS", HttpStatus.OK, "글 조회 성공");
 
     private final String code;
     private final HttpStatus status;

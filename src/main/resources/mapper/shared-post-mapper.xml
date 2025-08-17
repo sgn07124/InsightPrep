@@ -24,4 +24,58 @@
         )
     </select>
 
+    <resultMap id="PostDetailMap" type="com.project.InsightPrep.domain.post.dto.PostResponse$PostDetailDto">
+        <result property="postId"          column="post_id"/>
+        <result property="title"           column="title"/>
+        <result property="content"         column="content"/>
+        <result property="status"          column="status"/>
+        <result property="createdAt"       column="created_at"/>
+
+        <result property="authorId"        column="author_id"/>
+        <result property="authorNickname"  column="author_nickname"/>
+
+        <result property="questionId"      column="question_id"/>
+        <result property="category"        column="category"/>
+        <result property="question"        column="question_content"/>
+
+        <result property="answerId"        column="answer_id"/>
+        <result property="answer"          column="answer_content"/>
+
+        <result property="feedbackId"      column="feedback_id"/>
+        <result property="score"           column="score"/>
+        <result property="improvement"     column="improvement"/>
+        <result property="modelAnswer"     column="model_answer"/>
+    </resultMap>
+
+    <select id="findPostDetailById" resultMap="PostDetailMap">
+        SELECT
+            sp.id                  AS post_id,
+            sp.title               AS title,
+            sp.content             AS content,
+            sp.status              AS status,
+            sp.created_at          AS created_at,
+
+            m.id                   AS author_id,
+            m.nickname             AS author_nickname,
+
+            q.id                   AS question_id,
+            q.category             AS category,
+            q.content              AS question_content,
+
+            a.id                   AS answer_id,
+            a.content              AS answer_content,
+
+            f.id                   AS feedback_id,
+            f.score                AS score,
+            f.improvement          AS improvement,
+            f.model_answer         AS model_answer
+
+        FROM shared_post sp
+                 JOIN member m   ON m.id = sp.member_id
+                 JOIN answer a   ON a.id = sp.answer_id
+                 JOIN question q ON q.id = a.question_id
+                 LEFT JOIN answer_feedback f ON f.answer_id = a.id
+        WHERE sp.id = #{postId}
+    </select>
+
 </mapper>

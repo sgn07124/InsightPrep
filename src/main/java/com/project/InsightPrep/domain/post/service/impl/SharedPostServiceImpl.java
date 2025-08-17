@@ -1,6 +1,7 @@
 package com.project.InsightPrep.domain.post.service.impl;
 
 import com.project.InsightPrep.domain.post.dto.PostRequest.Create;
+import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import com.project.InsightPrep.domain.post.entity.PostStatus;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
@@ -38,5 +39,15 @@ public class SharedPostServiceImpl implements SharedPostService {
         }
 
         return sharedPostMapper.lastInsertedId();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PostDetailDto getPostDetail(long postId) {
+        PostDetailDto dto = sharedPostMapper.findPostDetailById(postId);
+        if (dto == null) {
+            throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        }
+        return dto;
     }
 }

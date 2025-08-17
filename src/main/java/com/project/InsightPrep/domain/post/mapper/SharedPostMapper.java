@@ -1,5 +1,6 @@
 package com.project.InsightPrep.domain.post.mapper;
 
+import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.data.repository.query.Param;
 
@@ -15,4 +16,6 @@ public interface SharedPostMapper {
     Long lastInsertedId();
 
     boolean existsByAnswerId(@Param("answerId") Long answerId);
+
+    PostDetailDto findPostDetailById(@Param("postId") long postId);
 }
