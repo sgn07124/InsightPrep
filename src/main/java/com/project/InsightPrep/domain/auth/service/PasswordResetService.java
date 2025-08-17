@@ -5,5 +5,5 @@ public interface PasswordResetService {
 
     String verifyOtp(String email, String code);
 
-    void resetPassword(String s, String s1);
+    void resetPassword(String resetToken, String newRawPassword);
 }
