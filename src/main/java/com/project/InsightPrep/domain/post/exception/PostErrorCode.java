@@ -14,7 +14,10 @@ public enum PostErrorCode implements BaseErrorCode {
     POST_NOT_FOUND("POST_NOT_FOUND", HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
     FORBIDDEN("FORBIDDEN", HttpStatus.FORBIDDEN, "본인만 변경이 가능합니다."),
     ALREADY_RESOLVED("ALREADY_RESOLVED", HttpStatus.BAD_REQUEST, "이미 해결한 글입니다."),
-    CONFLICT("CONFLICT", HttpStatus.CONFLICT, "수정에 실패했습니다.");
+    CONFLICT("CONFLICT", HttpStatus.CONFLICT, "수정에 실패했습니다."),
+
+    COMMENT_NOT_FOUND("COMMENT_NOT_FOUND", HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),
+    COMMENT_FORBIDDEN("COMMENT_FORBIDDEN", HttpStatus.FORBIDDEN, "댓글에 대한 권한이 없습니다.");
 
     private final String code;
     private final HttpStatus status;

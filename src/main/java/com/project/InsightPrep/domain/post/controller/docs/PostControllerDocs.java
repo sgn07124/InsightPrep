@@ -35,5 +35,11 @@ public interface PostControllerDocs {
     );
 
     @Operation(summary = "댓글 작성", description = "특정 글에 댓글을 작성합니다.")
-    public ResponseEntity<ApiResponse<CommentRes>> create(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req);
+    public ResponseEntity<ApiResponse<CommentRes>> createComment(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req);
+
+    @Operation(summary = "댓글 수정", description = "본인의 댓글을 수정합니다.")
+    public ResponseEntity<ApiResponse<Void>> updateComment(@PathVariable long postId, @PathVariable long commentId, @RequestBody @Valid CommentRequest.UpdateDto req);
+
+    @Operation(summary = "댓글 삭제", description = "본인의 댓글을 삭제합니다.")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable long postId, @PathVariable long commentId);
 }

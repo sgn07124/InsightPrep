@@ -11,4 +11,39 @@
         VALUES (NOW(), NOW(), #{content}, #{member.id}, #{sharedPost.id})
     </insert>
 
+    <resultMap id="CommentMap" type="comment">
+        <id property="id" column="id"/>
+        <result property="content" column="content"/>
+    </resultMap>
+
+    <select id="findById" parameterType="long" resultMap="CommentMap">
+        SELECT c.id, c.content, c.member_id, c.post_id
+        FROM comment c
+        WHERE c.id = #{id}
+    </select>
+
+    <select id="findRowById" parameterType="long"
+            resultType="com.project.InsightPrep.domain.post.dto.CommentResponse$CommentRow">
+        SELECT c.id,
+               c.post_id   AS postId,
+               c.member_id AS memberId,
+               c.content   AS content
+        FROM comment c
+        WHERE c.id = #{id}
+    </select>
+
+    <update id="updateContent">
+        UPDATE comment
+        SET content = #{content},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND member_id = #{memberId}
+    </update>
+
+    <delete id="deleteByIdAndMember">
+        DELETE FROM comment
+        WHERE id = #{id}
+          AND member_id = #{memberId}
+    </delete>
+
 </mapper>

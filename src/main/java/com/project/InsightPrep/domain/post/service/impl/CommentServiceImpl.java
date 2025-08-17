@@ -2,7 +2,9 @@ package com.project.InsightPrep.domain.post.service.impl;
 
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.post.dto.CommentRequest.CreateDto;
+import com.project.InsightPrep.domain.post.dto.CommentRequest.UpdateDto;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRow;
 import com.project.InsightPrep.domain.post.entity.Comment;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
@@ -52,5 +54,45 @@ public class CommentServiceImpl implements CommentService {
                 .postId(postId)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void updateComment(long postId, long commentId, UpdateDto req) {
+        SharedPost post = sharedPostMapper.findById(postId);
+        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+
+        CommentRow comment = commentMapper.findRowById(commentId);
+        if (comment == null) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+
+        // postId 매칭 검증
+        if (comment.getPostId() != postId) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+
+        // 본인이 작성한 댓글 검증
+        long me = securityUtil.getLoginMemberId();
+        if (comment.getMemberId() != me) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+
+        int n = commentMapper.updateContent(commentId, me, req.getContent());
+        if (n == 0) {
+            throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteComment(long postId, long commentId) {
+        SharedPost post = sharedPostMapper.findById(postId);
+        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+
+        CommentRow comment = commentMapper.findRowById(commentId);
+        if (comment == null) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+        if (comment.getPostId() != postId) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+
+        long me = securityUtil.getLoginMemberId();
+        int n = commentMapper.deleteByIdAndMember(commentId, me);
+        if (comment.getMemberId() != me) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+        if (n == 0) {
+            throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+        }
     }
 }

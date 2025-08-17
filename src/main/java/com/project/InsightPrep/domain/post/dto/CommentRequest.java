@@ -14,4 +14,12 @@ public class CommentRequest {
         @NotBlank(message = "댓글 내용을 입력해주세요.")
         private String content;
     }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateDto {
+        @NotBlank(message = "수정할 내용을 입력해주세요.")
+        private String content;
+    }
 }

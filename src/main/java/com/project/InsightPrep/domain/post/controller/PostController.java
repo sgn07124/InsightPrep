@@ -17,10 +17,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -67,8 +69,22 @@ public class PostController implements PostControllerDocs {
 
     @PostMapping("/{postId}/comments")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<CommentRes>> create(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req) {
+    public ResponseEntity<ApiResponse<CommentRes>> createComment(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req) {
         CommentRes res = commentService.createComment(postId, req);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, res));
+    }
+
+    @PutMapping("/{postId}/comments/{commentId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<Void>> updateComment(@PathVariable long postId, @PathVariable long commentId, @RequestBody @Valid CommentRequest.UpdateDto req) {
+        commentService.updateComment(postId, commentId, req);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
+    }
+
+    @DeleteMapping("/{postId}/comments/{commentId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable long postId, @PathVariable long commentId) {
+        commentService.deleteComment(postId, commentId);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
     }
 }
