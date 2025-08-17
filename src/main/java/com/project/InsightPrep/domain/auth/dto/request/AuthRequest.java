@@ -41,6 +41,7 @@ public class AuthRequest {
 
     @Getter
     @NoArgsConstructor
+    @Setter
     public static class MemberEmailDto {
         @NotBlank
         @Email

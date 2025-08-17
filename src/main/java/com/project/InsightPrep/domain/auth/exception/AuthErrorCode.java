@@ -16,7 +16,7 @@ public enum AuthErrorCode implements BaseErrorCode {
     // 이메일
     EMAIL_DUPLICATE_ERROR("EMAIL_DUPLICATE_ERROR", HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
     EMAIL_VERIFICATION_ERROR("EMAIL_VERIFICATION_ERROR", HttpStatus.BAD_REQUEST, "인증된 이메일이 아닙니다."),
-    EXPIRED_CODE_ERROR("LINK_EXPIRED_ERROR", HttpStatus.BAD_REQUEST, "코드 입력 시간이 만료되었습니다."),
+    EXPIRED_CODE_ERROR("EXPIRED_CODE_ERROR", HttpStatus.BAD_REQUEST, "코드 입력 시간이 만료되었습니다."),
     ALREADY_SEND_CODE_ERROR("ALREADY_SEND_CODE_ERROR", HttpStatus.BAD_REQUEST, "이미 유효한 인증 코드가 발급되었습니다."),
     OTP_ALREADY_USED("OTP_ALREADY_USED", HttpStatus.BAD_REQUEST, "이미 사용한 인증 코드입니다."),
     CODE_NOT_MATCH_ERROR("CODE_NOT_MATCH_ERROR", HttpStatus.BAD_REQUEST, "인증 코드가 일치하지 않습니다"),
