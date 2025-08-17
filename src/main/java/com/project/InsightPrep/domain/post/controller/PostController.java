@@ -1,11 +1,14 @@
 package com.project.InsightPrep.domain.post.controller;
 
 import com.project.InsightPrep.domain.post.controller.docs.PostControllerDocs;
+import com.project.InsightPrep.domain.post.dto.CommentRequest;
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
 import com.project.InsightPrep.domain.post.dto.PostRequest;
 import com.project.InsightPrep.domain.post.dto.PostResponse;
 import com.project.InsightPrep.domain.post.dto.PostResponse.Created;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
+import com.project.InsightPrep.domain.post.service.CommentService;
 import com.project.InsightPrep.domain.post.service.SharedPostService;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.common.response.ApiResponse;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostController implements PostControllerDocs {
 
     private final SharedPostService sharedPostService;
+    private final CommentService commentService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -59,5 +63,12 @@ public class PostController implements PostControllerDocs {
     ) {
         PageResponse<PostListItemDto> body = sharedPostService.getPosts(page, size);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, body));
+    }
+
+    @PostMapping("/{postId}/comments")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<CommentRes>> create(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req) {
+        CommentRes res = commentService.createComment(postId, req);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, res));
     }
 }

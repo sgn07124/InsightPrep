@@ -1,5 +1,7 @@
 package com.project.InsightPrep.domain.post.controller.docs;
 
+import com.project.InsightPrep.domain.post.dto.CommentRequest;
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
 import com.project.InsightPrep.domain.post.dto.PostRequest;
 import com.project.InsightPrep.domain.post.dto.PostResponse.Created;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
@@ -31,4 +33,7 @@ public interface PostControllerDocs {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     );
+
+    @Operation(summary = "댓글 작성", description = "특정 글에 댓글을 작성합니다.")
+    public ResponseEntity<ApiResponse<CommentRes>> create(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req);
 }

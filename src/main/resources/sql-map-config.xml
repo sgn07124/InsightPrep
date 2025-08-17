@@ -11,5 +11,6 @@
         <typeAlias alias="feedback" type="com.project.InsightPrep.domain.question.entity.AnswerFeedback"/>
         <typeAlias alias="password" type="com.project.InsightPrep.domain.auth.entity.PasswordVerification"/>
         <typeAlias alias="sharedPost" type="com.project.InsightPrep.domain.post.entity.SharedPost"/>
+        <typeAlias alias="comment" type="com.project.InsightPrep.domain.post.entity.Comment"/>
     </typeAliases>
 </configuration>

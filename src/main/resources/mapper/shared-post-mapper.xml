@@ -125,4 +125,18 @@
         FROM shared_post sp
     </select>
 
+    <resultMap id="SharedPostMap" type="sharedPost">
+        <id     property="id"     column="id"/>
+        <result property="title"  column="title"/>
+        <result property="content" column="content"/>
+        <result property="status" column="status"/>
+        <!-- member/answer 는 여기선 불필요하니 생략 -->
+    </resultMap>
+
+    <select id="findById" parameterType="long" resultMap="SharedPostMap">
+        SELECT id, title, content, status
+        FROM shared_post
+        WHERE id = #{postId}
+    </select>
+
 </mapper>

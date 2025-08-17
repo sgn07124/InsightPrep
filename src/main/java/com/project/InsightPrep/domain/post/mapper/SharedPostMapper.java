@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.post.mapper;
 import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
+import com.project.InsightPrep.domain.post.entity.SharedPost;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +30,6 @@ public interface SharedPostMapper {
     List<PostListItemDto> findSharedPostsPaged(@Param("limit") int limit, @Param("offset") int offset);
 
     long countSharedPosts();
+
+    SharedPost findById(@Param("postId") long postId);
 }

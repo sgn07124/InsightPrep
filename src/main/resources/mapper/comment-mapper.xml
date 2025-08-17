@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.InsightPrep.domain.post.mapper.CommentMapper">
+
+    <insert id="insertComment" parameterType="comment">
+        <selectKey keyProperty="id" resultType="long" order="AFTER">
+            SELECT currval(pg_get_serial_sequence('comment','id'))
+        </selectKey>
+        INSERT INTO comment (created_at, updated_at, content, member_id, post_id)
+        VALUES (NOW(), NOW(), #{content}, #{member.id}, #{sharedPost.id})
+    </insert>
+
+</mapper>
