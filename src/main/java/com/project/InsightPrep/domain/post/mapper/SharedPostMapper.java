@@ -2,6 +2,8 @@ package com.project.InsightPrep.domain.post.mapper;
 
 import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
+import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.data.repository.query.Param;
 
@@ -23,4 +25,8 @@ public interface SharedPostMapper {
     PostOwnerStatusDto findOwnerAndStatus(@Param("postId") long postId);
 
     int updateStatusToResolved(@Param("postId") long postId);
+
+    List<PostListItemDto> findSharedPostsPaged(@Param("limit") int limit, @Param("offset") int offset);
+
+    long countSharedPosts();
 }

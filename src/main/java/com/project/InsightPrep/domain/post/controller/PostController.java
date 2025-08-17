@@ -5,7 +5,9 @@ import com.project.InsightPrep.domain.post.dto.PostRequest;
 import com.project.InsightPrep.domain.post.dto.PostResponse;
 import com.project.InsightPrep.domain.post.dto.PostResponse.Created;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
+import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
 import com.project.InsightPrep.domain.post.service.SharedPostService;
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.common.response.ApiResponse;
 import com.project.InsightPrep.global.common.response.code.ApiSuccessCode;
 import jakarta.validation.Valid;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -46,5 +49,15 @@ public class PostController implements PostControllerDocs {
     public ResponseEntity<ApiResponse<Void>> resolve(@PathVariable long postId) {
         sharedPostService.resolve(postId);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<PageResponse<PostListItemDto>>> list(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        PageResponse<PostListItemDto> body = sharedPostService.getPosts(page, size);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, body));
     }
 }

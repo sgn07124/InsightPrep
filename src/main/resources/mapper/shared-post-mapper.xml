@@ -96,4 +96,33 @@
         WHERE id = #{postId} AND status = 'OPEN'
     </update>
 
+    <resultMap id="PostListItemMap" type="com.project.InsightPrep.domain.post.dto.PostResponse$PostListItemDto">
+        <result property="postId"    column="post_id"/>
+        <result property="title"     column="title"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="status"    column="status"/>
+        <result property="question"  column="question_content"/>
+        <result property="category"  column="category"/>
+    </resultMap>
+
+    <select id="findSharedPostsPaged" resultMap="PostListItemMap">
+        SELECT
+            sp.id            AS post_id,
+            sp.title         AS title,
+            sp.created_at    AS created_at,
+            sp.status        AS status,
+            q.content        AS question_content,
+            q.category       AS category
+        FROM shared_post sp
+                 JOIN answer a   ON a.id = sp.answer_id
+                 JOIN question q ON q.id = a.question_id
+        ORDER BY sp.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSharedPosts" resultType="long">
+        SELECT COUNT(*)
+        FROM shared_post sp
+    </select>
+
 </mapper>

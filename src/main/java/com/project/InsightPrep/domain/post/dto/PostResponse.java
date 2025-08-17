@@ -44,4 +44,16 @@ public class PostResponse {
         private String improvement;
         private String modelAnswer;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    public static class PostListItemDto {
+        private long postId;
+        private String title;
+        private LocalDateTime createdAt;
+        private String status;
+        private String question;
+        private String category;
+    }
 }

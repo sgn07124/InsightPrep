@@ -3,13 +3,16 @@ package com.project.InsightPrep.domain.post.service.impl;
 import com.project.InsightPrep.domain.post.dto.PostRequest.Create;
 import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
+import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
 import com.project.InsightPrep.domain.post.entity.PostStatus;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.service.SharedPostService;
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -72,5 +75,18 @@ public class SharedPostServiceImpl implements SharedPostService {
         if (updated != 1) {
             throw new PostException(PostErrorCode.CONFLICT);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PostListItemDto> getPosts(int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        int offset = (safePage - 1) * safeSize;
+
+        List<PostListItemDto> content = sharedPostMapper.findSharedPostsPaged(safeSize, offset);
+        long total = sharedPostMapper.countSharedPosts();
+
+        return PageResponse.of(content, safePage, safeSize, total);
     }
 }
