@@ -1,5 +1,6 @@
 package com.project.InsightPrep.domain.post.mapper;
 
+import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +19,8 @@ public interface SharedPostMapper {
     boolean existsByAnswerId(@Param("answerId") Long answerId);
 
     PostDetailDto findPostDetailById(@Param("postId") long postId);
+
+    PostOwnerStatusDto findOwnerAndStatus(@Param("postId") long postId);
+
+    int updateStatusToResolved(@Param("postId") long postId);
 }

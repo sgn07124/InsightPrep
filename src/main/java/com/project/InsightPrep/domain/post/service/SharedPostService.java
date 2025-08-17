@@ -7,4 +7,6 @@ public interface SharedPostService {
     Long createPost(Create req);
 
     PostDetailDto getPostDetail(long postId);
+
+    void resolve(long postId);
 }

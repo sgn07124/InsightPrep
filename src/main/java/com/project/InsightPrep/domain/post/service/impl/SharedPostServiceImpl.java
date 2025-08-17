@@ -1,6 +1,7 @@
 package com.project.InsightPrep.domain.post.service.impl;
 
 import com.project.InsightPrep.domain.post.dto.PostRequest.Create;
+import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import com.project.InsightPrep.domain.post.entity.PostStatus;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
@@ -49,5 +50,27 @@ public class SharedPostServiceImpl implements SharedPostService {
             throw new PostException(PostErrorCode.POST_NOT_FOUND);
         }
         return dto;
+    }
+
+    @Override
+    @Transactional
+    public void resolve(long postId) {
+        long loginId = securityUtil.getLoginMemberId();
+
+        PostOwnerStatusDto row = sharedPostMapper.findOwnerAndStatus(postId);
+        if (row == null) {
+            throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        }
+        if (!row.getMemberId().equals(loginId)) {
+            throw new PostException(PostErrorCode.FORBIDDEN);
+        }
+        if ("RESOLVED".equals(row.getStatus())) {
+            throw new PostException(PostErrorCode.ALREADY_RESOLVED);
+        }
+
+        int updated = sharedPostMapper.updateStatusToResolved(postId);
+        if (updated != 1) {
+            throw new PostException(PostErrorCode.CONFLICT);
+        }
     }
 }

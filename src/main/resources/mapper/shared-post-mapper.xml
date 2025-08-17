@@ -78,4 +78,22 @@
         WHERE sp.id = #{postId}
     </select>
 
+    <resultMap id="OwnerStatusMap"
+               type="com.project.InsightPrep.domain.post.dto.PostRequest$PostOwnerStatusDto">
+        <result property="memberId" column="member_id"/>
+        <result property="status"   column="status"/>
+    </resultMap>
+
+    <select id="findOwnerAndStatus" resultMap="OwnerStatusMap">
+        SELECT sp.member_id, sp.status
+        FROM shared_post sp
+        WHERE sp.id = #{postId}
+    </select>
+
+    <update id="updateStatusToResolved">
+        UPDATE shared_post
+        SET status = 'RESOLVED', updated_at = NOW()
+        WHERE id = #{postId} AND status = 'OPEN'
+    </update>
+
 </mapper>

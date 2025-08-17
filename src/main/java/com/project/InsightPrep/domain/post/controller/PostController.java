@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,5 +39,12 @@ public class PostController implements PostControllerDocs {
     public ResponseEntity<ApiResponse<PostDetailDto>> getPost(@PathVariable long postId) {
         PostDetailDto dto = sharedPostService.getPostDetail(postId);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_POST_SUCCESS, dto));
+    }
+
+    @PatchMapping("/{postId}/resolve")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<Void>> resolve(@PathVariable long postId) {
+        sharedPostService.resolve(postId);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
     }
 }
