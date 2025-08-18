@@ -2,6 +2,7 @@ package com.project.InsightPrep.domain.post.controller;
 
 import com.project.InsightPrep.domain.post.controller.docs.PostControllerDocs;
 import com.project.InsightPrep.domain.post.dto.CommentRequest;
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
 import com.project.InsightPrep.domain.post.dto.PostRequest;
 import com.project.InsightPrep.domain.post.dto.PostResponse;
@@ -86,5 +87,16 @@ public class PostController implements PostControllerDocs {
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable long postId, @PathVariable long commentId) {
         commentService.deleteComment(postId, commentId);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
+    }
+
+    @GetMapping("/{postId}/comments")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ApiResponse<PageResponse<CommentListItem>>> listComments(
+            @PathVariable long postId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        PageResponse<CommentListItem> res = commentService.getComments(postId, page, size);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, res));
     }
 }

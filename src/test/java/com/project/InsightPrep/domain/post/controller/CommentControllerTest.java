@@ -60,9 +60,9 @@ class CommentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.commentId").value(777L))
-                .andExpect(jsonPath("$.data.content").value("첫 댓글"))
-                .andExpect(jsonPath("$.data.postId").value((int) postId))
+                .andExpect(jsonPath("$.result.commentId").value(777L))
+                .andExpect(jsonPath("$.result.content").value("첫 댓글"))
+                .andExpect(jsonPath("$.result.postId").value((int) postId))
                 .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.SUCCESS.name()))));
 
         verify(commentService).createComment(eq(postId), ArgumentMatchers.any(CommentRequest.CreateDto.class));

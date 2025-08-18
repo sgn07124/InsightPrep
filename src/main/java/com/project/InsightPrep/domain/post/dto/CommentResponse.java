@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 public class CommentResponse {
 
@@ -27,5 +28,19 @@ public class CommentResponse {
         private long postId;
         private long memberId;
         private String content;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CommentListItem {
+        private Long commentId;
+        private Long authorId;
+        private String authorNickname;
+        private String content;
+        private LocalDateTime createdAt;
+        private boolean mine;
     }
 }

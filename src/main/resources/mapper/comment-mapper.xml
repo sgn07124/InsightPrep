@@ -46,4 +46,32 @@
           AND member_id = #{memberId}
     </delete>
 
+    <select id="findByPostPaged"
+            resultMap="CommentListItemMap">
+        SELECT
+            c.id         AS commentId,
+            m.id         AS authorId,
+            m.nickname   AS authorNickname,
+            c.content    AS content,
+            c.created_at AS createdAt
+        FROM comment c
+                 JOIN member m ON m.id = c.member_id
+        WHERE c.post_id = #{postId}
+        ORDER BY c.created_at ASC, c.id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <resultMap id="CommentListItemMap"
+               type="com.project.InsightPrep.domain.post.dto.CommentResponse$CommentListItem">
+        <result property="commentId"      column="commentId"/>
+        <result property="authorId"       column="authorId"/>
+        <result property="authorNickname" column="authorNickname"/>
+        <result property="content"        column="content"/>
+        <result property="createdAt"      column="createdAt"/>
+    </resultMap>
+
+    <select id="countByPost" resultType="long">
+        SELECT COUNT(*) FROM comment WHERE post_id = #{postId}
+    </select>
+
 </mapper>

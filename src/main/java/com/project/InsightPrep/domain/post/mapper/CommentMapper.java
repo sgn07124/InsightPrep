@@ -1,7 +1,9 @@
 package com.project.InsightPrep.domain.post.mapper;
 
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRow;
 import com.project.InsightPrep.domain.post.entity.Comment;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,4 +19,8 @@ public interface CommentMapper {
     int deleteByIdAndMember(@Param("id") long id, @Param("memberId") long memberId);
 
     CommentRow findRowById(@Param("id") long id);
+
+    List<CommentListItem> findByPostPaged(@Param("postId") long postId, @Param("limit") int limit, @Param("offset") int offset);
+
+    long countByPost(@Param("postId") long postId);
 }

@@ -43,6 +43,9 @@ public class PostResponse {
         private Integer score;
         private String improvement;
         private String modelAnswer;
+
+        private Boolean myPost;
+        private Long commentCount;
     }
 
     @Getter

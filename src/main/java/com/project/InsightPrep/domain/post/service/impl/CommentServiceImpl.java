@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.post.service.impl;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.post.dto.CommentRequest.CreateDto;
 import com.project.InsightPrep.domain.post.dto.CommentRequest.UpdateDto;
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRow;
 import com.project.InsightPrep.domain.post.entity.Comment;
@@ -12,8 +13,10 @@ import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.post.mapper.CommentMapper;
 import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.service.CommentService;
+import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -94,5 +97,35 @@ public class CommentServiceImpl implements CommentService {
         if (n == 0) {
             throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CommentListItem> getComments(long postId, int page, int size) {
+        SharedPost post = sharedPostMapper.findById(postId);
+        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 50);
+        int offset = (safePage - 1) * safeSize;
+
+        List<CommentListItem> raw = commentMapper.findByPostPaged(postId, safeSize, offset);
+        long total = commentMapper.countByPost(postId);
+
+        // 현재 로그인한 사용자 id
+        long me = securityUtil.getLoginMemberId();
+
+        List<CommentListItem> content = raw.stream()
+                .map(c -> CommentListItem.builder()
+                        .commentId(c.getCommentId())
+                        .authorId(c.getAuthorId())
+                        .authorNickname(c.getAuthorNickname())
+                        .content(c.getContent())
+                        .createdAt(c.getCreatedAt())
+                        .mine(c.getAuthorId() != null && c.getAuthorId() == me)
+                        .build())
+                .toList();
+
+        return PageResponse.of(content, safePage, safeSize, total);
     }
 }

@@ -45,6 +45,9 @@
         <result property="score"           column="score"/>
         <result property="improvement"     column="improvement"/>
         <result property="modelAnswer"     column="model_answer"/>
+
+        <result property="myPost"          column="is_my_post"  jdbcType="BOOLEAN"/>
+        <result property="commentCount"    column="comment_count"/>
     </resultMap>
 
     <select id="findPostDetailById" resultMap="PostDetailMap">
@@ -68,7 +71,10 @@
             f.id                   AS feedback_id,
             f.score                AS score,
             f.improvement          AS improvement,
-            f.model_answer         AS model_answer
+            f.model_answer         AS model_answer,
+
+            (sp.member_id = #{viewerId}) AS is_my_post,
+            (SELECT COUNT(*) FROM comment c WHERE c.post_id = sp.id) AS comment_count
 
         FROM shared_post sp
                  JOIN member m   ON m.id = sp.member_id

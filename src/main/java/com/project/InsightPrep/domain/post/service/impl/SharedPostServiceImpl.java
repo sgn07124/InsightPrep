@@ -48,7 +48,8 @@ public class SharedPostServiceImpl implements SharedPostService {
     @Override
     @Transactional(readOnly = true)
     public PostDetailDto getPostDetail(long postId) {
-        PostDetailDto dto = sharedPostMapper.findPostDetailById(postId);
+        long viewerId = securityUtil.getLoginMemberId();
+        PostDetailDto dto = sharedPostMapper.findPostDetailById(postId, viewerId);
         if (dto == null) {
             throw new PostException(PostErrorCode.POST_NOT_FOUND);
         }

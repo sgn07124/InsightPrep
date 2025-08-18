@@ -1,6 +1,7 @@
 package com.project.InsightPrep.domain.post.controller.docs;
 
 import com.project.InsightPrep.domain.post.dto.CommentRequest;
+import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
 import com.project.InsightPrep.domain.post.dto.PostRequest;
 import com.project.InsightPrep.domain.post.dto.PostResponse.Created;
@@ -42,4 +43,11 @@ public interface PostControllerDocs {
 
     @Operation(summary = "댓글 삭제", description = "본인의 댓글을 삭제합니다.")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable long postId, @PathVariable long commentId);
+
+    @Operation(summary = "댓글 목록 조회", description = "특정 글에 작성된 댓글들을 조회합니다.")
+    public ResponseEntity<ApiResponse<PageResponse<CommentListItem>>> listComments(
+            @PathVariable long postId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    );
 }

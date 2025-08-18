@@ -21,7 +21,7 @@ public interface SharedPostMapper {
 
     boolean existsByAnswerId(@Param("answerId") Long answerId);
 
-    PostDetailDto findPostDetailById(@Param("postId") long postId);
+    PostDetailDto findPostDetailById(@Param("postId") long postId, @Param("viewerId") long viewerId);
 
     PostOwnerStatusDto findOwnerAndStatus(@Param("postId") long postId);
 
