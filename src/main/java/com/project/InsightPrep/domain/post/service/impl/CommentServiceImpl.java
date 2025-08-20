@@ -92,8 +92,8 @@ public class CommentServiceImpl implements CommentService {
         if (comment.getPostId() != postId) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
 
         long me = securityUtil.getLoginMemberId();
-        int n = commentMapper.deleteByIdAndMember(commentId, me);
         if (comment.getMemberId() != me) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+        int n = commentMapper.deleteByIdAndMember(commentId, me);
         if (n == 0) {
             throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
         }

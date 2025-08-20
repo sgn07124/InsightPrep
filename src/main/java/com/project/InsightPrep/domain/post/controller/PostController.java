@@ -55,7 +55,7 @@ public class PostController implements PostControllerDocs {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<Void>> resolve(@PathVariable long postId) {
         sharedPostService.resolve(postId);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.UPDATE_POST_STATUS_SUCCESS));
     }
 
     @GetMapping
@@ -65,28 +65,28 @@ public class PostController implements PostControllerDocs {
             @RequestParam(defaultValue = "10") int size
     ) {
         PageResponse<PostListItemDto> body = sharedPostService.getPosts(page, size);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, body));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_POSTS_SUCCESS, body));
     }
 
     @PostMapping("/{postId}/comments")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<CommentRes>> createComment(@PathVariable long postId, @RequestBody @Valid CommentRequest.CreateDto req) {
         CommentRes res = commentService.createComment(postId, req);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, res));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.CREATE_COMMENT_SUCCESS, res));
     }
 
     @PutMapping("/{postId}/comments/{commentId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<Void>> updateComment(@PathVariable long postId, @PathVariable long commentId, @RequestBody @Valid CommentRequest.UpdateDto req) {
         commentService.updateComment(postId, commentId, req);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.UPDATE_COMMENT_SUCCESS));
     }
 
     @DeleteMapping("/{postId}/comments/{commentId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable long postId, @PathVariable long commentId) {
         commentService.deleteComment(postId, commentId);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.DELETE_COMMENT_SUCCESS));
     }
 
     @GetMapping("/{postId}/comments")
@@ -97,6 +97,6 @@ public class PostController implements PostControllerDocs {
             @RequestParam(defaultValue = "10") int size
     ) {
         PageResponse<CommentListItem> res = commentService.getComments(postId, page, size);
-        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.SUCCESS, res));
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_COMMENTS_SUCCESS, res));
     }
 }
