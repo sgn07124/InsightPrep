@@ -5,6 +5,7 @@ import com.project.InsightPrep.domain.question.dto.request.AnswerRequest;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.AnswerDto;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
+import com.project.InsightPrep.domain.question.dto.response.PreviewResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.service.AnswerService;
@@ -78,5 +79,12 @@ public class QuestionController implements QuestionControllerDocs {
     public ResponseEntity<ApiResponse<?>> deleteQuestion(@PathVariable long answerId) {
         answerService.deleteAnswer(answerId);
         return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.DELETE_QUESTION_SUCCESS));
+    }
+
+    @GetMapping("/{answerId}/preview")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<ApiResponse<PreviewResponse>> getPreview(@PathVariable long answerId) {
+        PreviewResponse res = answerService.getPreview(answerId);
+        return ResponseEntity.ok(ApiResponse.of(ApiSuccessCode.GET_PREVIEW_SUCCESS, res));
     }
 }

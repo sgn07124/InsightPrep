@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.question.service.impl;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.question.dto.request.AnswerRequest.AnswerDto;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
+import com.project.InsightPrep.domain.question.dto.response.PreviewResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
@@ -63,5 +64,16 @@ public class AnswerServiceImpl implements AnswerService {
         }
 
         answerMapper.resetQuestionStatusIfNoAnswers(questionId, AnswerStatus.WAITING.name());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PreviewResponse getPreview(long answerId) {
+        long memberId = securityUtil.getLoginMemberId();
+        PreviewResponse res = answerMapper.findMyPreviewByAnswerId(answerId, memberId);
+        if (res == null) {
+            throw new QuestionException(QuestionErrorCode.ANSWER_NOT_FOUND);
+        }
+        return res;
     }
 }

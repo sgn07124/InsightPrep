@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.InsightPrep.domain.post.mapper.SharedPostMapper">
+
+    <insert id="insertSharedPost">
+        <selectKey resultType="long" keyProperty="id" order="AFTER">
+            SELECT currval(pg_get_serial_sequence('shared_post','id'))
+        </selectKey>
+        INSERT INTO shared_post (
+        created_at, updated_at, title, content, answer_id, member_id, status
+        ) VALUES (
+        NOW(), NOW(), #{title}, #{content}, #{answerId}, #{memberId}, #{status}
+        )
+    </insert>
+
+    <select id="lastInsertedId" resultType="long">
+        SELECT currval(pg_get_serial_sequence('shared_post','id'))
+    </select>
+
+    <select id="existsByAnswerId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM shared_post WHERE answer_id = #{answerId}
+        )
+    </select>
+
+    <resultMap id="PostDetailMap" type="com.project.InsightPrep.domain.post.dto.PostResponse$PostDetailDto">
+        <result property="postId"          column="post_id"/>
+        <result property="title"           column="title"/>
+        <result property="content"         column="content"/>
+        <result property="status"          column="status"/>
+        <result property="createdAt"       column="created_at"/>
+
+        <result property="authorId"        column="author_id"/>
+        <result property="authorNickname"  column="author_nickname"/>
+
+        <result property="questionId"      column="question_id"/>
+        <result property="category"        column="category"/>
+        <result property="question"        column="question_content"/>
+
+        <result property="answerId"        column="answer_id"/>
+        <result property="answer"          column="answer_content"/>
+
+        <result property="feedbackId"      column="feedback_id"/>
+        <result property="score"           column="score"/>
+        <result property="improvement"     column="improvement"/>
+        <result property="modelAnswer"     column="model_answer"/>
+
+        <result property="myPost"          column="is_my_post"  jdbcType="BOOLEAN"/>
+        <result property="commentCount"    column="comment_count"/>
+    </resultMap>
+
+    <select id="findPostDetailById" resultMap="PostDetailMap">
+        SELECT
+            sp.id                  AS post_id,
+            sp.title               AS title,
+            sp.content             AS content,
+            sp.status              AS status,
+            sp.created_at          AS created_at,
+
+            m.id                   AS author_id,
+            m.nickname             AS author_nickname,
+
+            q.id                   AS question_id,
+            q.category             AS category,
+            q.content              AS question_content,
+
+            a.id                   AS answer_id,
+            a.content              AS answer_content,
+
+            f.id                   AS feedback_id,
+            f.score                AS score,
+            f.improvement          AS improvement,
+            f.model_answer         AS model_answer,
+
+            (sp.member_id = #{viewerId}) AS is_my_post,
+            (SELECT COUNT(*) FROM comment c WHERE c.post_id = sp.id) AS comment_count
+
+        FROM shared_post sp
+                 JOIN member m   ON m.id = sp.member_id
+                 JOIN answer a   ON a.id = sp.answer_id
+                 JOIN question q ON q.id = a.question_id
+                 LEFT JOIN answer_feedback f ON f.answer_id = a.id
+        WHERE sp.id = #{postId}
+    </select>
+
+    <resultMap id="OwnerStatusMap"
+               type="com.project.InsightPrep.domain.post.dto.PostRequest$PostOwnerStatusDto">
+        <result property="memberId" column="member_id"/>
+        <result property="status"   column="status"/>
+    </resultMap>
+
+    <select id="findOwnerAndStatus" resultMap="OwnerStatusMap">
+        SELECT sp.member_id, sp.status
+        FROM shared_post sp
+        WHERE sp.id = #{postId}
+    </select>
+
+    <update id="updateStatusToResolved">
+        UPDATE shared_post
+        SET status = 'RESOLVED', updated_at = NOW()
+        WHERE id = #{postId} AND status = 'OPEN'
+    </update>
+
+    <resultMap id="PostListItemMap" type="com.project.InsightPrep.domain.post.dto.PostResponse$PostListItemDto">
+        <result property="postId"    column="post_id"/>
+        <result property="title"     column="title"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="status"    column="status"/>
+        <result property="question"  column="question_content"/>
+        <result property="category"  column="category"/>
+    </resultMap>
+
+    <select id="findSharedPostsPaged" resultMap="PostListItemMap">
+        SELECT
+            sp.id            AS post_id,
+            sp.title         AS title,
+            sp.created_at    AS created_at,
+            sp.status        AS status,
+            q.content        AS question_content,
+            q.category       AS category
+        FROM shared_post sp
+                 JOIN answer a   ON a.id = sp.answer_id
+                 JOIN question q ON q.id = a.question_id
+        ORDER BY sp.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSharedPosts" resultType="long">
+        SELECT COUNT(*)
+        FROM shared_post sp
+    </select>
+
+    <resultMap id="SharedPostMap" type="sharedPost">
+        <id     property="id"     column="id"/>
+        <result property="title"  column="title"/>
+        <result property="content" column="content"/>
+        <result property="status" column="status"/>
+        <!-- member/answer 는 여기선 불필요하니 생략 -->
+    </resultMap>
+
+    <select id="findById" parameterType="long" resultMap="SharedPostMap">
+        SELECT id, title, content, status
+        FROM shared_post
+        WHERE id = #{postId}
+    </select>
+
+</mapper>

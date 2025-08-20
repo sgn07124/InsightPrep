@@ -22,7 +22,17 @@ public enum ApiSuccessCode {
     FEEDBACK_PENDING("FEEDBACK_PENDING", HttpStatus.ACCEPTED, "피드백 생성 중입니다."),
     GET_QUESTIONS_SUCCESS("GET_QUESTIONS_SUCCESS", HttpStatus.OK, "질문 리스트 조회 성공"),
     DELETE_QUESTION_SUCCESS("DELETE_QUESTION_SUCCESS", HttpStatus.OK, "질문과 답변, 피드백 삭제 성공"),
-    ME_SUCCESS("ME_SUCCESS", HttpStatus.OK, "로그인 상태입니다.");
+    ME_SUCCESS("ME_SUCCESS", HttpStatus.OK, "로그인 상태입니다."),
+
+    CREATE_POST_SUCCESS("CREATE_POST_SUCCESS", HttpStatus.OK, "글 생성 성공"),
+    GET_POST_SUCCESS("GET_POST_SUCCESS", HttpStatus.OK, "글 조회 성공"),
+    UPDATE_POST_STATUS_SUCCESS("UPDATE_POST_STATUS_SUCCESS", HttpStatus.OK, "글 상태 변경 성공"),
+    GET_POSTS_SUCCESS("GET_POSTS_SUCCESS", HttpStatus.OK, "글 리스트 조회 성공"),
+    CREATE_COMMENT_SUCCESS("CREATE_COMMENT_SUCCESS", HttpStatus.OK, "댓글 저장 성공"),
+    UPDATE_COMMENT_SUCCESS("UPDATE_COMMENT_SUCCESS", HttpStatus.OK, "댓글 수정 성공"),
+    DELETE_COMMENT_SUCCESS("DELETE_COMMENT_SUCCESS", HttpStatus.OK, "댓글 삭제 성공"),
+    GET_COMMENTS_SUCCESS("GET_COMMENTS_SUCCESS", HttpStatus.OK, "댓글 리스트 조회 성공"),
+    GET_PREVIEW_SUCCESS("GET_PREVIEW_SUCCESS", HttpStatus.OK, "프리뷰 조회 성공");
 
     private final String code;
     private final HttpStatus status;

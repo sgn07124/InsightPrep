@@ -4,6 +4,7 @@ import com.project.InsightPrep.domain.question.dto.request.AnswerRequest;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.AnswerDto;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
+import com.project.InsightPrep.domain.question.dto.response.PreviewResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.global.common.response.ApiResponse;
@@ -36,4 +37,7 @@ public interface QuestionControllerDocs {
     @Operation(summary = "특정 면접 질문 삭제", description = "본인이 답변한 질문들을 리스트로 조회했을 때, 원하는 질문에 대하여 삭제합니다. 해당 질문 삭제 시, 질문에 대한 답변과 피드백 모두 삭제됩니다. "
             + "답변 id로 삭제가 진행되며 피드백이 연쇄 삭제되고, 질문은 상태가 WAITING으로 수정되어 자동으로 삭제됩니다.")
     public ResponseEntity<ApiResponse<?>> deleteQuestion(@PathVariable long answerId);
+
+    @Operation(summary = "답변에 대한 프리뷰 조회", description = "연결된 질문과 답변 조회 시 사용합니다.")
+    public ResponseEntity<ApiResponse<PreviewResponse>> getPreview(@PathVariable long answerId);
 }
