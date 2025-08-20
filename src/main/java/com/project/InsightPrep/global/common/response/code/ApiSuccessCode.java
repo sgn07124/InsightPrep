@@ -27,7 +27,8 @@ public enum ApiSuccessCode {
     CREATE_POST_SUCCESS("CREATE_POST_SUCCESS", HttpStatus.OK, "글 생성 성공"),
     GET_POST_SUCCESS("GET_POST_SUCCESS", HttpStatus.OK, "글 조회 성공"),
     UPDATE_POST_STATUS_SUCCESS("UPDATE_POST_STATUS_SUCCESS", HttpStatus.OK, "글 상태 변경 성공"),
-    GET_POSTS_SUCCESS("GET_POSTS_SUCCESS", HttpStatus.OK, "글 리스트 조회 성공");
+    GET_POSTS_SUCCESS("GET_POSTS_SUCCESS", HttpStatus.OK, "글 리스트 조회 성공"),
+    GET_PREVIEW_SUCCESS("GET_PREVIEW_SUCCESS", HttpStatus.OK, "프리뷰 조회 성공");
 
     private final String code;
     private final HttpStatus status;

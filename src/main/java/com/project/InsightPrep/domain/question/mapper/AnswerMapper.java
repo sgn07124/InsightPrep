@@ -1,5 +1,6 @@
 package com.project.InsightPrep.domain.question.mapper;
 
+import com.project.InsightPrep.domain.question.dto.response.PreviewResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import java.util.List;
@@ -21,6 +22,8 @@ public interface AnswerMapper {
     int deleteMyAnswerById(@Param("answerId") long answerId, @Param("memberId") long memberId);
 
     void resetQuestionStatusIfNoAnswers(@Param("questionId") Long questionId, @Param("waiting") String waitingStatus);
+
+    PreviewResponse findMyPreviewByAnswerId(@Param("answerId") long answerId, @Param("memberId") long memberId);
 
     boolean existsMyAnswer(@Param("answerId") Long answerId, @Param("memberId") Long memberId);
 }

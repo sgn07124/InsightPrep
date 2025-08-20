@@ -97,4 +97,14 @@
         )
     </select>
 
+    <select id="findMyPreviewByAnswerId" resultType="com.project.InsightPrep.domain.question.dto.response.PreviewResponse">
+        SELECT
+            q.content AS question,
+            a.content AS answer
+        FROM answer a
+                 JOIN question q ON q.id = a.question_id
+        WHERE a.id = #{answerId}
+          AND a.member_id = #{memberId}
+    </select>
+
 </mapper>
