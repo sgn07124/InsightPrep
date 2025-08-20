@@ -6,7 +6,7 @@ import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface SharedPostMapper {
