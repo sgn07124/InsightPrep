@@ -324,8 +324,6 @@ class CommentServiceImplTest {
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, postId, owner, "x"));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
-            // 구현상 먼저 deleteByIdAndMember를 호출한 뒤 소유자 검사 → 0 반환될 수 있음
-            when(commentMapper.deleteByIdAndMember(commentId, me)).thenReturn(0);
 
             assertThatThrownBy(() -> commentService.deleteComment(postId, commentId))
                     .isInstanceOf(PostException.class)
@@ -334,7 +332,7 @@ class CommentServiceImplTest {
             verify(sharedPostMapper).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verify(securityUtil).getLoginMemberId();
-            verify(commentMapper).deleteByIdAndMember(commentId, me);
+            verifyNoMoreInteractions(commentMapper);
         }
     }
 

@@ -24,6 +24,8 @@ public class QuestionResponse {
     @JsonInclude(Include.NON_NULL)
     public static class GptQuestion {
         private String question;
+        private String topic;
+        private String keyword;
     }
 
     @Getter

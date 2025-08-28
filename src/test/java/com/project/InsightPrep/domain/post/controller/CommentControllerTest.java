@@ -71,7 +71,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.result.commentId").value(777L))
                 .andExpect(jsonPath("$.result.content").value("첫 댓글"))
                 .andExpect(jsonPath("$.result.postId").value((int) postId))
-                .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.SUCCESS.name()))));
+                .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.CREATE_COMMENT_SUCCESS.name()))));
 
         verify(commentService).createComment(eq(postId), ArgumentMatchers.any(CommentRequest.CreateDto.class));
         verifyNoMoreInteractions(commentService);
@@ -94,7 +94,7 @@ class CommentControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.SUCCESS.name()))));
+                .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.UPDATE_COMMENT_SUCCESS.name()))));
 
         verify(commentService).updateComment(eq(postId), eq(commentId), ArgumentMatchers.any(CommentRequest.UpdateDto.class));
         verifyNoMoreInteractions(commentService);
@@ -113,7 +113,7 @@ class CommentControllerTest {
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").doesNotExist())
-                .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.SUCCESS.name()))));
+                .andExpect(jsonPath("$.code", anyOf(nullValue(), is(ApiSuccessCode.DELETE_COMMENT_SUCCESS.name()))));
 
         verify(commentService).deleteComment(eq(postId), eq(commentId));
         verifyNoMoreInteractions(commentService);
@@ -155,7 +155,7 @@ class CommentControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 // ApiResponse 공통 래퍼 구조 검증
-                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("GET_COMMENTS_SUCCESS"))
                 .andExpect(jsonPath("$.message", not(isEmptyOrNullString())))
                 // 페이징 필드
                 .andExpect(jsonPath("$.result.page").value(page))
@@ -191,7 +191,7 @@ class CommentControllerTest {
                         .with(user("u2").roles("USER"))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("GET_COMMENTS_SUCCESS"))
                 .andExpect(jsonPath("$.result.page").value(page))
                 .andExpect(jsonPath("$.result.size").value(size))
                 .andExpect(jsonPath("$.result.totalElements").value(0))

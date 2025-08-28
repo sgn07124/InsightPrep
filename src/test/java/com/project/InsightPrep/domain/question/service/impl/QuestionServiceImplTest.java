@@ -18,9 +18,11 @@ import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.GptQuestion;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
+import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import com.project.InsightPrep.global.gpt.service.GptService;
 import java.lang.reflect.Field;
@@ -46,6 +48,9 @@ class QuestionServiceImplTest {
     private AnswerMapper answerMapper;
 
     @Mock
+    private RecentPromptFilterService recentPromptFilterService;
+
+    @Mock
     private SecurityUtil securityUtil;
 
     @InjectMocks
@@ -56,23 +61,32 @@ class QuestionServiceImplTest {
     void createQuestion_ShouldGenerateQuestionAndInsertIntoDatabase() {
         // given
         String category = "OS";
+        long memberId = 7L;
 
-        // GPT 응답 Mock 설정
+        // 로그인 사용자 id 필요
+        when(securityUtil.getLoginMemberId()).thenReturn(memberId);
+
+        // 최근 금지 토픽/키워드 조회는 빈 리스트로
+        when(recentPromptFilterService.getRecent(eq(memberId), eq(category), eq(ItemType.TOPIC), anyInt()))
+                .thenReturn(List.of());
+        when(recentPromptFilterService.getRecent(eq(memberId), eq(category), eq(ItemType.KEYWORD), anyInt()))
+                .thenReturn(List.of());
+
+        // GPT 응답 Mock (topic/keyword도 채움: record 시 NPE 방지)
         GptQuestion mockGptQuestion = GptQuestion.builder()
-                        .question("운영체제에서 프로세스와 스레드의 차이를 설명하세요.").build();
+                .question("운영체제에서 프로세스와 스레드의 차이를 설명하세요.")
+                .topic("프로세스 vs 스레드")
+                .keyword("thread")
+                .build();
         when(gptService.callOpenAI(any(), anyInt(), anyDouble(), any()))
                 .thenReturn(mockGptQuestion);
 
-        // Question 객체가 저장될 때, id가 설정되어 있다고 가정
-        // MyBatis insert 후에 객체에 id가 설정되는 구조이므로, 직접 설정 필요
-        // Entity에 @Setter를 두는 것을 선호하지 않기 때문에 리플렉션을 통해 id 필드에 강제로 값을 주입 (테스트 코드에서만 사용하므로 이 방식 적용)
+        // insert 시 id 주입
         doAnswer(invocation -> {
             Question q = invocation.getArgument(0);
-
             Field idField = Question.class.getDeclaredField("id");
             idField.setAccessible(true);
-            idField.set(q, 123L);  // id 직접 설정
-
+            idField.set(q, 123L);
             return null;
         }).when(questionMapper).insertQuestion(any(Question.class));
 
@@ -86,8 +100,17 @@ class QuestionServiceImplTest {
         assertEquals("운영체제에서 프로세스와 스레드의 차이를 설명하세요.", result.getContent());
         assertEquals(AnswerStatus.WAITING, result.getStatus());
 
-        // insert가 실제로 호출되었는지 확인
-        verify(questionMapper, times(1)).insertQuestion(any(Question.class));
+        // 핵심 상호작용 검증
+        InOrder inOrder = inOrder(securityUtil, recentPromptFilterService, gptService, questionMapper);
+        inOrder.verify(securityUtil).getLoginMemberId();
+        inOrder.verify(recentPromptFilterService).getRecent(memberId, category, ItemType.TOPIC, 10);
+        inOrder.verify(recentPromptFilterService).getRecent(memberId, category, ItemType.KEYWORD, 10);
+        inOrder.verify(gptService).callOpenAI(any(), anyInt(), anyDouble(), any());
+        inOrder.verify(questionMapper).insertQuestion(any(Question.class));
+        inOrder.verify(recentPromptFilterService).record(memberId, category, ItemType.TOPIC, "프로세스 vs 스레드");
+        inOrder.verify(recentPromptFilterService).record(memberId, category, ItemType.KEYWORD, "thread");
+
+        verifyNoMoreInteractions(recentPromptFilterService, gptService, questionMapper, securityUtil);
     }
 
     @Test

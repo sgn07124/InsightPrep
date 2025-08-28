@@ -9,6 +9,7 @@
         <typeAlias alias="question" type="com.project.InsightPrep.domain.question.entity.Question"/>
         <typeAlias alias="answer" type="com.project.InsightPrep.domain.question.entity.Answer"/>
         <typeAlias alias="feedback" type="com.project.InsightPrep.domain.question.entity.AnswerFeedback"/>
+        <typeAlias alias="recent-prompt-filter" type="com.project.InsightPrep.domain.question.entity.RecentPromptFilter"/>
         <typeAlias alias="password" type="com.project.InsightPrep.domain.auth.entity.PasswordVerification"/>
         <typeAlias alias="sharedPost" type="com.project.InsightPrep.domain.post.entity.SharedPost"/>
         <typeAlias alias="comment" type="com.project.InsightPrep.domain.post.entity.Comment"/>

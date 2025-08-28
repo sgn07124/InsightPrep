@@ -111,13 +111,13 @@ class PostControllerTest {
         mockMvc.perform(patch("/post/{postId}/resolve", postId)
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("UPDATE_POST_STATUS_SUCCESS"))
                 .andExpect(jsonPath("$.result").doesNotExist());
     }
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("GET /api/posts : 목록 + 페이징 성공")
+    @DisplayName("GET /post : 목록 + 페이징 성공")
     void list_success() throws Exception {
         int page = 2, size = 3;
 
@@ -143,7 +143,7 @@ class PostControllerTest {
                         .param("page", String.valueOf(page))
                         .param("size", String.valueOf(size)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("GET_POSTS_SUCCESS"))
                 .andExpect(jsonPath("$.result.page").value(page))
                 .andExpect(jsonPath("$.result.size").value(size))
                 .andExpect(jsonPath("$.result.totalElements").value(20))

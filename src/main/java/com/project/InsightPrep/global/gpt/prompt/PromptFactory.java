@@ -1,6 +1,7 @@
 package com.project.InsightPrep.global.gpt.prompt;
 
 import com.project.InsightPrep.global.gpt.dto.response.GptMessage;
+import java.util.Collections;
 import java.util.List;
 
 public class PromptFactory {
@@ -9,16 +10,94 @@ public class PromptFactory {
 
     // 질문 생성용 프롬프트
     public static List<GptMessage> forQuestionGeneration(String category) {
+        // 기존 호출부 호환: 금지 목록 없이 호출되면 빈 리스트로 대체
+        return forQuestionGeneration(category, Collections.emptyList(), Collections.emptyList());
+    }
+
+    // 동적 금지 토픽/키워드 주입 버전
+    public static List<GptMessage> forQuestionGeneration(String category, List<String> bannedTopics, List<String> bannedKeywords) {
         String systemPrompt = """
-                당신은 예리하고 경험 많은 소프트웨어 개발자 면접관입니다. 
-                지원자의 수준을 파악할 수 있는 깊이 있는 CS 면접 질문을 생성해야 합니다. 
+                당신은 예리하고 경험 많은 소프트웨어 개발자 면접관입니다.
+                지원자의 수준을 파악할 수 있는 깊이 있는 CS 면접 질문을 생성해야 합니다.
                 질문은 실무와 밀접하게 연관되며, 개념 이해를 바탕으로 응답자의 사고력을 평가할 수 있어야 합니다.
                 응답은 질문 하나로만 구성되어야 하며, 질문 외의 설명이나 해설은 포함하지 마세요.
-                아래 JSON 형식을 지켜서 응답해 주세요. 
-                { \\"question\\": \\"...\\" }
+                아래 JSON 형식을 지켜서 응답해 주세요. 단, JSON만 출력하되, 코드블록은 출력하지 마세요.
+                {
+                  \\"question\\": \\"...\\",
+                  \\"topic\\": \\"...\\",     // 질문을 대표하는 짧은 주제 문구 (예: \\"volatile의 메모리 가시성\\")
+                  \\"keyword\\": \\"...\\"    // 중복 방지용 핵심 단어 (예: \\"volatile\\", \\"hashmap\\", \\"dijkstra\\")
+                }
                 """;
 
-        String userPrompt = category + "에 관한 CS(Computer System) 면접 질문 하나를 만들어 주세요.";
+        String guardrails = switch (category.toLowerCase()) {
+            case "algorithm" -> """
+                    [카테고리: 알고리즘(코딩테스트/기술면접용)]
+                    포함 예시: 시간복잡도/공간복잡도, 정렬, 탐색(Binary Search), 투포인터, 슬라이딩 윈도우, 스택/큐/우선순위큐/해시, 그래프(DFS/BFS), 최단경로(다익스트라/벨만-포드), 최소신장트리(크루스칼/프림),
+                    위상정렬, 동적계획법(LIS/LCS/Knapsack 등), 비트마스킹, 분할정복, 그리디, 유니온파인드, 세그먼트트리/펜윅트리 등.
+                    반드시 제외: 머신러닝/딥러닝/통계/확률/최적화(경사하강법, CNN/RNN/Transformer, SVM, KMeans 등)
+                    """;
+            case "java" -> """
+                    [카테고리: Java]
+                    주제를 고르게 분산: 언어 기초(클래스/인터페이스/추상/상속/다형성), 제네릭/애너테이션/레코드, 예외/에러 처리, 컬렉션/동등성(equals/hashCode), 스트림/람다/함수형 인터페이스,
+                    동시성(스레드/락/volatile/Atomic/CompletableFuture), I/O/NIO, 모듈 시스템, JVM(클래스로더, 메모리 구조, JIT) 등. GC/volatile 등 특정 주제가 반복 출제되지 않도록 분산.
+                    프레임워크(Spring 등) 종속 질문은 피하고 순수 Java 중심으로.
+                    """;
+            case "os" -> """
+                    [카테고리: 운영체제]
+                    프로세스/스레드/CPU 스케줄링, 동기화(뮤텍스/세마포어/모니터), 교착상태,
+                    메모리 관리(페이징/세그멘테이션/교체 알고리즘), 파일시스템, 시스템콜 등.
+                    """;
+            case "network", "computer network" -> """
+                    [카테고리: 네트워크]
+                    OSI/TCP-IP, TCP/UDP 차이/흐름·혼잡제어, 3-way/4-way, HTTP/1.1 vs 2 vs 3, TLS/HTTPS,
+                    DNS/CDN/캐시, 프록시/로드밸런싱 등.
+                    """;
+            case "db", "database" -> """
+                    [카테고리: 데이터베이스]
+                    정규화/인덱스/트랜잭션/격리수준, 쿼리 최적화, 조인 전략, 샤딩/리플리케이션, NoSQL vs RDB 등.
+                    """;
+            case "spring" -> """
+                    [카테고리: Spring]
+                    DI/IoC, AOP, 트랜잭션 관리, MVC 구조, 빈 생명주기, 예외 처리, Validation 등(Java 일반보다 프레임워크 중심).
+                    """;
+            default -> """
+                    [카테고리: 일반 CS]
+                    자료구조/알고리즘/OS/네트워크/DB/소프트웨어 공학 등 면접용 정통 CS 범위에서 출제.
+                    머신러닝/딥러닝/데이터사이언스 주제는 제외.
+                    """;
+        };
+
+        String diversityRules = """
+                추가 지침:
+                - 최근에 출제된 주제/키워드와 **중복 금지**. (아래 금지 목록을 반드시 피하세요)
+                - 지나치게 광범위한 '모두 설명하라' 대신, 하나의 개념/기법/상황을 날카롭게 파고드는 질문으로.
+                - 동일 카테고리 내에서도 하위 주제를 **순환**하며 다양성을 유지하세요.
+                """;
+
+        String bannedSection = "";
+        if (bannedTopics != null && !bannedTopics.isEmpty()) {
+            bannedSection += "금지 토픽(최근): " + String.join(", ", bannedTopics) + "\n";
+        }
+        if (bannedKeywords != null && !bannedKeywords.isEmpty()) {
+            bannedSection += "금지 키워드(최근): " + String.join(", ", bannedKeywords) + "\n";
+        }
+        if (!bannedSection.isEmpty()) {
+            bannedSection = "\n[중복 방지용 금지 목록]\n" + bannedSection;
+        }
+
+        String userPrompt = """
+            다음 카테고리에 대한 CS 면접 질문 1개를 생성하세요.
+            카테고리: %s
+
+            %s
+
+            %s
+            %s
+
+            출력 형식(JSON):
+            { "question": "...", "topic": "...", "keyword": "..." }
+        """.formatted(category, guardrails, diversityRules, bannedSection);
+
         return toMessages(systemPrompt, userPrompt);
     }
 
