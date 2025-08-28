@@ -18,7 +18,59 @@ public class PromptFactory {
                 { \\"question\\": \\"...\\" }
                 """;
 
-        String userPrompt = category + "에 관한 CS(Computer System) 면접 질문 하나를 만들어 주세요.";
+        String guardrails = switch (category.toLowerCase()) {
+            case "algorithm" -> """
+                    [카테고리: 알고리즘(코딩테스트/기술면접용)]
+                    포함 예시: 시간복잡도/공간복잡도, 정렬, 탐색(Binary Search), 투포인터, 슬라이딩 윈도우, 스택/큐/우선순위큐/해시, 그래프(DFS/BFS), 최단경로(다익스트라/벨만-포드), 최소신장트리(크루스칼/프림), 
+                    위상정렬, 동적계획법(LIS/LCS/Knapsack 등), 비트마스킹, 분할정복, 그리디, 유니온파인드, 세그먼트트리/펜윅트리 등.
+                    반드시 제외: 머신러닝/딥러닝/통계/확률/최적화(경사하강법, CNN/RNN/Transformer, SVM, KMeans 등)
+                    """;
+            case "java" -> """
+                    [카테고리: Java]
+                    주제를 고르게 분산: 언어 기초(클래스/인터페이스/추상/상속/다형성), 제네릭/애너테이션/레코드, 예외/에러 처리, 컬렉션/동등성(equals/hashCode), 스트림/람다/함수형 인터페이스, 
+                    동시성(스레드/락/volatile/Atomic/CompletableFuture), I/O/NIO, 모듈 시스템, JVM(클래스로더, 메모리 구조, JIT) 등. GC만 반복적으로 출제하지 말 것(필요 시 다른 주제와 교차).
+                    프레임워크(Spring 등) 종속 질문은 피하고 순수 Java 중심으로.
+                    """;
+            case "os" -> """
+                    [카테고리: 운영체제]
+                    프로세스/스레드/CPU 스케줄링, 동기화(뮤텍스/세마포어/모니터), 교착상태,
+                    메모리 관리(페이징/세그멘테이션/교체 알고리즘), 파일시스템, 시스템콜 등.
+                    """;
+            case "network", "computer network" -> """
+                    [카테고리: 네트워크]
+                    OSI/TCP-IP, TCP/UDP 차이/흐름·혼잡제어, 3-way/4-way, HTTP/1.1 vs 2 vs 3, TLS/HTTPS,
+                    DNS/CDN/캐시, 프록시/로드밸런싱 등.
+                    """;
+            case "db", "database" -> """
+                    [카테고리: 데이터베이스]
+                    정규화/인덱스/트랜잭션/격리수준, 쿼리 최적화, 조인 전략, 샤딩/리플리케이션, NoSQL vs RDB 등.
+                    """;
+            case "spring" -> """
+                    [카테고리: Spring]
+                    DI/IoC, AOP, 트랜잭션 관리, MVC 구조, 빈 생명주기, 예외 처리, Validation 등(Java 일반보다 프레임워크 중심).
+                    """;
+            default -> """
+                    [카테고리: 일반 CS]
+                    자료구조/알고리즘/OS/네트워크/DB/소프트웨어 공학 등 면접용 정통 CS 범위에서 출제.
+                    머신러닝/딥러닝/데이터사이언스 주제는 제외.
+                    """;
+        };
+
+        String diversityRules = """
+                추가 지침:
+                - 비슷한 주제가 연속 반복되지 않도록, 최근에 출제된 주제와 중복을 피하세요.
+                - 지나치게 광범위한 '모두 설명해라' 형태 대신, 한 개념/기법/상황을 날카롭게 파고드는 질문으로
+                """;
+
+        String userPrompt = """
+            다음 카테고리에 대한 CS 면접 질문 1개를 생성하세요.
+            카테고리: %s
+    
+            %s
+    
+            %s
+        """.formatted(category, guardrails, diversityRules);
+
         return toMessages(systemPrompt, userPrompt);
     }
 
