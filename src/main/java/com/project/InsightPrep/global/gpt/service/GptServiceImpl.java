@@ -46,6 +46,7 @@ public class GptServiceImpl implements GptService {
         }
 
         String content = response.getChoices().get(0).getMessage().getContent();
+        System.out.println(content);
 
         try {
             return switch (responseType) {

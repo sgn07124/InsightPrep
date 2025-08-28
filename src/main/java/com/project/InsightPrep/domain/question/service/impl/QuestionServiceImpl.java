@@ -6,11 +6,14 @@ import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.Gpt
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionDto;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
+import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.service.QuestionService;
+import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
+import com.project.InsightPrep.global.gpt.dto.response.GptMessage;
 import com.project.InsightPrep.global.gpt.prompt.PromptFactory;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
 import com.project.InsightPrep.global.gpt.service.GptService;
@@ -28,13 +31,26 @@ public class QuestionServiceImpl implements QuestionService {
     private final GptService gptService;
     private final QuestionMapper questionMapper;
     private final AnswerMapper answerMapper;
+    private final RecentPromptFilterService recentPromptFilterService;
     private final SecurityUtil securityUtil;
 
     @Override
     @Transactional
     public QuestionDto createQuestion(String category) {
-        GptQuestion gptQuestion = gptService.callOpenAI(PromptFactory.forQuestionGeneration(category), 1000, 0.6, GptResponseType.QUESTION);
+        long memberId = securityUtil.getLoginMemberId();
+        // 1) 최근 금지 주제/키워드 조회 (없을 수 있음)
+        List<String> bannedTopics = recentPromptFilterService.getRecent(memberId, category, ItemType.TOPIC, 10);
+        List<String> bannedKeywords = recentPromptFilterService.getRecent(memberId, category, ItemType.KEYWORD, 10);
 
+        // 2) 프롬프트 선택 (있으면 주입, 없으면 기본)
+        List<GptMessage> prompt = (hasAny(bannedTopics, bannedKeywords))
+                ? PromptFactory.forQuestionGeneration(category, bannedTopics, bannedKeywords)
+                : PromptFactory.forQuestionGeneration(category);
+
+        // 3) 호출
+        GptQuestion gptQuestion = gptService.callOpenAI(prompt, 1000, 0.6, GptResponseType.QUESTION);
+
+        // 4) DB에 저장
         Question question = Question.builder()
                 .category(category)
                 .content(gptQuestion.getQuestion())
@@ -42,6 +58,14 @@ public class QuestionServiceImpl implements QuestionService {
                 .build();
 
         questionMapper.insertQuestion(question);
+
+        // 5) 기록 (Redis + DB) - 응답에 topic/keyword가 비어있을 수도 있으므로 방어
+        if (isNotBlank(gptQuestion.getTopic())) {
+            recentPromptFilterService.record(memberId, category, ItemType.TOPIC, gptQuestion.getTopic());
+        }
+        if (isNotBlank(gptQuestion.getKeyword())) {
+            recentPromptFilterService.record(memberId, category, ItemType.KEYWORD, gptQuestion.getKeyword());
+        }
 
         return QuestionResponse.QuestionDto.builder()
                 .id(question.getId())
@@ -64,4 +88,10 @@ public class QuestionServiceImpl implements QuestionService {
         long total = answerMapper.countQuestionsWithFeedback(memberId);
         return PageResponse.of(content, safePage, safeSize, total);
     }
+
+    private boolean hasAny(List<String> a, List<String> b) {
+        return (a != null && !a.isEmpty()) || (b != null && !b.isEmpty());
+    }
+
+    private boolean isNotBlank(String s) { return s != null && !s.isBlank(); }
 }
