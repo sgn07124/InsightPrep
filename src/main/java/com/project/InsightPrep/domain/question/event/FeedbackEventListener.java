@@ -3,6 +3,8 @@ package com.project.InsightPrep.domain.question.event;
 import com.project.InsightPrep.domain.question.dto.response.FeedbackResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
+import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
+import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.FeedbackMapper;
 import com.project.InsightPrep.global.gpt.prompt.PromptFactory;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
@@ -26,9 +28,12 @@ public class FeedbackEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleAnswerSaved(AnswerSavedEvent event) {
         Answer answer = event.answer();
+        if (answer == null) throw new QuestionException(QuestionErrorCode.ANSWER_NOT_FOUND);
+        if (answer.getQuestion() == null) throw new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND);
 
         String question = answer.getQuestion().getContent();
         String userAnswer = answer.getContent();
+        if (userAnswer == null) throw new QuestionException(QuestionErrorCode.ANSWER_NOT_FOUND);
 
         FeedbackResponse gptResult = gptService.callOpenAI(PromptFactory.forFeedbackGeneration(question, userAnswer), 1000, 0.4, GptResponseType.FEEDBACK);
         AnswerFeedback feedback = AnswerFeedback.builder()
