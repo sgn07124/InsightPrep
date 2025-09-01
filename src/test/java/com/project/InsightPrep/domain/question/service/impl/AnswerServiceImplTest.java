@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -19,12 +20,15 @@ import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
+import com.project.InsightPrep.domain.question.event.AnswerSavedEvent;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +36,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class AnswerServiceImplTest {
@@ -50,6 +55,11 @@ class AnswerServiceImplTest {
 
     @Mock
     private FeedbackServiceImpl feedbackService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+
 
     @DisplayName("답변 저장 - 정상 동작")
     @Test
@@ -83,9 +93,6 @@ class AnswerServiceImplTest {
             return null;
         }).when(answerMapper).insertAnswer(any(Answer.class));
 
-        // feedback 호출 자체만 확인; 내용은 captor로 검증
-        doNothing().when(feedbackService).saveFeedback(any(Answer.class));
-
         // when
         AnswerResponse.AnswerDto res = answerService.saveAnswer(dto, questionId);
 
@@ -95,10 +102,13 @@ class AnswerServiceImplTest {
         verify(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
         verify(answerMapper).insertAnswer(any(Answer.class));
 
-        // feedbackService로 전달된 Answer에 id가 채워졌는지 검증
-        ArgumentCaptor<Answer> answerCaptor = ArgumentCaptor.forClass(Answer.class);
-        verify(feedbackService).saveFeedback(answerCaptor.capture());
-        Answer savedForFeedback = answerCaptor.getValue();
+        // 이벤트 객체 캡처
+        ArgumentCaptor<AnswerSavedEvent> eventCaptor = ArgumentCaptor.forClass(AnswerSavedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        AnswerSavedEvent publishedEvent = eventCaptor.getValue();
+        Answer savedForFeedback = publishedEvent.answer();  // 이벤트 안에서 Answer 꺼내기
+
         assertThat(savedForFeedback.getId()).isEqualTo(100L);
         assertThat(savedForFeedback.getMember().getId()).isEqualTo(1L);
         assertThat(savedForFeedback.getQuestion().getId()).isEqualTo(questionId);
@@ -154,5 +164,28 @@ class AnswerServiceImplTest {
         verify(answerMapper).deleteMyAnswerById(answerId, memberId);
         verify(answerMapper, never()).resetQuestionStatusIfNoAnswers(anyLong(), anyString());
         verifyNoMoreInteractions(answerMapper, securityUtil);
+    }
+
+    @Test
+    void saveAnswer_shouldPublishEvent_andTriggerFeedbackListener() {
+        // given
+        Long questionId = 1L;
+        AnswerDto dto = new AnswerDto("테스트 답변");
+
+        doAnswer(invocation -> {
+            Answer arg = invocation.getArgument(0);
+            Field idField = Answer.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(arg, 123L); // PK 강제 설정
+            return null;
+        }).when(answerMapper).insertAnswer(any(Answer.class));
+
+        // when
+        answerService.saveAnswer(dto, questionId);
+
+        // then (비동기라 약간 대기 필요)
+        Awaitility.await().atMost(3, TimeUnit.SECONDS).untilAsserted(() ->
+                verify(eventPublisher, times(1)).publishEvent(any(AnswerSavedEvent.class))
+        );
     }
 }

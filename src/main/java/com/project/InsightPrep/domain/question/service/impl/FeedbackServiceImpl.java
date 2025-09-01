@@ -30,9 +30,6 @@ public class FeedbackServiceImpl implements FeedbackService {
         String userAnswer = answer.getContent();
 
         FeedbackResponse gptResult = gptService.callOpenAI(PromptFactory.forFeedbackGeneration(question, userAnswer), 1000, 0.4, GptResponseType.FEEDBACK);
-        System.out.println(gptResult.getScore());
-        System.out.println(gptResult.getImprovement());
-        System.out.println(gptResult.getModelAnswer());
         AnswerFeedback feedback = AnswerFeedback.builder()
                 .answer(answer)
                 .score(gptResult.getScore())
