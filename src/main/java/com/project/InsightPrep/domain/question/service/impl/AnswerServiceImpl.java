@@ -7,6 +7,7 @@ import com.project.InsightPrep.domain.question.dto.response.PreviewResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
+import com.project.InsightPrep.domain.question.event.AnswerSavedEvent;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
@@ -16,6 +17,7 @@ import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class AnswerServiceImpl implements AnswerService {
     private final QuestionMapper questionMapper;
     private final AnswerMapper answerMapper;
     private final FeedbackService feedbackService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -43,7 +46,8 @@ public class AnswerServiceImpl implements AnswerService {
 
         questionMapper.updateStatus(questionId, AnswerStatus.ANSWERED.name());
         answerMapper.insertAnswer(answer);
-        feedbackService.saveFeedback(answer);
+        //feedbackService.saveFeedback(answer);
+        eventPublisher.publishEvent(new AnswerSavedEvent(answer));
         return AnswerResponse.AnswerDto.builder()
                 .answerId(answer.getId()).build();
     }
