@@ -34,7 +34,7 @@
 
 
 ### 회원가입 & 로그인
-
+![Image](https://github.com/user-attachments/assets/3521c486-566a-4bbf-8d07-fce62dc2addb)
 
 ### 비밀번호 재설정
 
