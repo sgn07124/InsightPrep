@@ -27,16 +27,32 @@
 
 ## 🎥 주요 화면
 
-### 질문 생성 → 답변 작성 → 피드백 조회
-
-
-### 피드백에 대한 토론글 작성
-
-
-### 회원가입 & 로그인
-![Image](https://github.com/user-attachments/assets/3521c486-566a-4bbf-8d07-fce62dc2addb)
-
-### 비밀번호 재설정
+<table>
+  <tr>
+    <td align="center">
+      질문 생성 → 답변 작성 → 피드백 조회  
+      <br>
+      <img src="https://github.com/user-attachments/assets/fb4631cb-6042-48c2-8f1a-85da6b981594" width="400"/>
+    </td>
+    <td align="center">
+      피드백에 대한 토론글 작성  
+      <br>
+      <img src="https://github.com/user-attachments/assets/68388e2f-44d8-480d-aa71-d2a96ac1a921" width="400"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      회원가입 & 로그인  
+      <br>
+      <img src="https://github.com/user-attachments/assets/3521c486-566a-4bbf-8d07-fce62dc2addb" width="400"/>
+    </td>
+    <td align="center">
+      비밀번호 재설정  
+      <br>
+      <img src="https://github.com/user-attachments/assets/404b6dcb-b08d-47a2-acd3-4bf1083db256" width="400"/>
+    </td>
+  </tr>
+</table>
 
 ## 📕 기타 산출물
 
