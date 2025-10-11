@@ -62,7 +62,7 @@ public class AuthServiceImplSignUpTest {
     void login_success() {
         // given
         LoginDto dto = new LoginDto("test@example.com", "Password123!", false);
-        Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER);
+        Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER, 10);
 
         when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
         when(passwordEncoder.matches(dto.getPassword(), member.getPassword())).thenReturn(true);
@@ -92,7 +92,7 @@ public class AuthServiceImplSignUpTest {
     void login_password_mismatch() {
         // given
         LoginDto dto = new LoginDto("test@example.com", "Password123", false);
-        Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER);
+        Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER, 10);
 
         when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
         when(passwordEncoder.matches(dto.getPassword(), member.getPassword())).thenReturn(false);
@@ -106,7 +106,7 @@ public class AuthServiceImplSignUpTest {
     void login_auto() {
         // given
         LoginDto dto = new LoginDto("test@example.com", "Password123!", true);
-        Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER);
+        Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER, 10);
 
         when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
         when(passwordEncoder.matches(dto.getPassword(), member.getPassword())).thenReturn(true);
