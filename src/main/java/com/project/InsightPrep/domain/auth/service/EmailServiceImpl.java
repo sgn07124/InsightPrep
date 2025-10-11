@@ -5,6 +5,7 @@ import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.EmailMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender emailSender;
     private final AuthMapper authMapper;
+    private final AuthRepository authRepository;
     private final EmailMapper emailMapper;
 
     private static final long EXPIRE_MINUTES = 10;
@@ -104,7 +106,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void existEmail(String email) {
-        if (authMapper.existEmail(email)) {
+        if (authRepository.existsByEmail(email)) {
             throw new AuthException(AuthErrorCode.EMAIL_DUPLICATE_ERROR);
         }
     }

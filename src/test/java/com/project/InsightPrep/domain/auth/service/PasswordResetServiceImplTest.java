@@ -4,6 +4,7 @@ import com.project.InsightPrep.domain.auth.entity.PasswordVerification;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.PasswordMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import jakarta.mail.MessagingException;
@@ -30,6 +31,8 @@ class PasswordResetServiceImplTest {
     @Mock PasswordMapper passwordMapper;
     @Mock AuthMapper authMapper;
     @Mock
+    AuthRepository authRepository;
+    @Mock
     SecurityUtil securityUtil;
 
     @InjectMocks PasswordResetServiceImpl service;
@@ -44,7 +47,7 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("requestOtp: 가입된 이메일이면 OTP 저장 및 메일 발송")
     void requestOtp_sendsMail_whenEmailExists() throws Exception {
-        when(authMapper.existEmail(EMAIL)).thenReturn(true);
+        when(authRepository.existsByEmail(EMAIL)).thenReturn(true);
 
         // execute
         service.requestOtp(EMAIL);
@@ -65,7 +68,7 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("requestOtp: 미가입 이메일이면 아무 동작 없이 정상 종료 (정보 유출 방지)")
     void requestOtp_returnsSilently_whenEmailNotExist() throws Exception {
-        when(authMapper.existEmail(EMAIL)).thenReturn(false);
+        when(authRepository.existsByEmail(EMAIL)).thenReturn(false);
 
         service.requestOtp(EMAIL);
 
@@ -76,7 +79,7 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("requestOtp: 메일 전송 실패 시 RuntimeException 전파")
     void requestOtp_throws_whenSendMailFails() throws Exception {
-        when(authMapper.existEmail(EMAIL)).thenReturn(true);
+        when(authRepository.existsByEmail(EMAIL)).thenReturn(true);
         doThrow(new MessagingException("smtp down"))
                 .when(emailService).sendEmail(anyString(), anyString(), anyString());
 
@@ -176,14 +179,14 @@ class PasswordResetServiceImplTest {
         row.builder().email(EMAIL).build();
 
         when(passwordMapper.findByResetToken(token)).thenReturn(row);
-        when(authMapper.findByEmail(EMAIL)).thenReturn(Optional.of(Member.builder().email(EMAIL).build()));
+        when(authRepository.findByEmail(EMAIL)).thenReturn(Optional.of(Member.builder().email(EMAIL).build()));
         when(securityUtil.encode("newP@ss!")).thenReturn("hashed");
-        when(authMapper.updatePasswordByEmail(EMAIL, "hashed")).thenReturn(1);
+        when(authRepository.updatePasswordByEmail(EMAIL, "hashed")).thenReturn(1);
         when(passwordMapper.markResetTokenUsed(token)).thenReturn(1);
 
         service.resetPassword(token, "newP@ss!");
 
-        verify(authMapper).updatePasswordByEmail(EMAIL, "hashed");
+        verify(authRepository).updatePasswordByEmail(EMAIL, "hashed");
         verify(passwordMapper).markResetTokenUsed(token);
     }
 
@@ -227,7 +230,7 @@ class PasswordResetServiceImplTest {
         row.builder().email(EMAIL).build();
 
         when(passwordMapper.findByResetToken(token)).thenReturn(row);
-        when(authMapper.findByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(authRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.resetPassword(token, "pw"))
                 .isInstanceOf(AuthException.class);
@@ -242,9 +245,9 @@ class PasswordResetServiceImplTest {
         row.builder().email(EMAIL).build();
 
         when(passwordMapper.findByResetToken(token)).thenReturn(row);
-        when(authMapper.findByEmail(EMAIL)).thenReturn(Optional.of(Member.builder().email(EMAIL).build()));
+        when(authRepository.findByEmail(EMAIL)).thenReturn(Optional.of(Member.builder().email(EMAIL).build()));
         when(securityUtil.encode("pw")).thenReturn("hashed");
-        when(authMapper.updatePasswordByEmail(EMAIL, "hashed")).thenReturn(0);
+        when(authRepository.updatePasswordByEmail(EMAIL, "hashed")).thenReturn(0);
 
         assertThatThrownBy(() -> service.resetPassword(token, "pw"))
                 .isInstanceOf(AuthException.class);
@@ -259,9 +262,9 @@ class PasswordResetServiceImplTest {
         row.builder().email(EMAIL).build();
 
         when(passwordMapper.findByResetToken(token)).thenReturn(row);
-        when(authMapper.findByEmail(EMAIL)).thenReturn(Optional.of(Member.builder().email(EMAIL).build()));
+        when(authRepository.findByEmail(EMAIL)).thenReturn(Optional.of(Member.builder().email(EMAIL).build()));
         when(securityUtil.encode("pw")).thenReturn("hashed");
-        when(authMapper.updatePasswordByEmail(EMAIL, "hashed")).thenReturn(1);
+        when(authRepository.updatePasswordByEmail(EMAIL, "hashed")).thenReturn(1);
         when(passwordMapper.markResetTokenUsed(token)).thenReturn(0);
 
         assertThatThrownBy(() -> service.resetPassword(token, "pw"))

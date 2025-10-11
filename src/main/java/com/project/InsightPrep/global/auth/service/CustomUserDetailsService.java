@@ -1,6 +1,7 @@
 package com.project.InsightPrep.global.auth.service;
 
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +15,11 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final AuthMapper authMapper;
+    private final AuthRepository authRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Member member = authMapper.findByEmail(email)
+        Member member = authRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("존재하지 않는 사용자입니다."));
         return new CustomUserDetails(member);
     }

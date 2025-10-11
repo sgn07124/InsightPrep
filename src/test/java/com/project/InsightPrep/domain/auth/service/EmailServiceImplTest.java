@@ -16,6 +16,7 @@ import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.EmailMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.lang.reflect.Field;
@@ -40,6 +41,9 @@ class EmailServiceImplTest {
 
     @Mock
     private AuthMapper authMapper;
+
+    @Mock
+    private AuthRepository authRepository;
 
     @Mock
     private EmailMapper emailMapper;
@@ -98,7 +102,7 @@ class EmailServiceImplTest {
     @DisplayName("이메일 중복 - 중복일 경우 예외 발생")
     void existEmail_Duplicate_ThrowsException() {
         String email = "test@example.com";
-        given(authMapper.existEmail(email)).willReturn(true);
+        given(authRepository.existsByEmail(email)).willReturn(true);
 
         assertThrows(AuthException.class, () -> emailService.existEmail(email));
     }

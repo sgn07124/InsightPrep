@@ -5,6 +5,7 @@ import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.PasswordMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import jakarta.mail.MessagingException;
@@ -28,12 +29,13 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final EmailService emailService;
     private final PasswordMapper passwordMapper;
     private final AuthMapper authMapper;
+    private final AuthRepository authRepository;
     private final SecurityUtil securityUtil;
 
     @Override
     @Transactional
     public void requestOtp(String email) {
-        boolean exists = authMapper.existEmail(email);
+        boolean exists = authRepository.existsByEmail(email);
         // exists=false여도 "요청 접수" 응답은 동일하게. (계정 존재 여부 노출 방지)
         if (!exists) {
             // 계정이 없으면 그냥 "요청 접수"처럼 리턴 (메일 안보냄)
@@ -135,11 +137,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         // 3) 멤버 조회(존재 확인)
         String email = row.getEmail();
-        Member member = authMapper.findByEmail(email).orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
+        Member member = authRepository.findByEmail(email).orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
 
         // 4) 패스워드 해시 & 저장
         String hashed = securityUtil.encode(newRawPassword);
-        int updated = authMapper.updatePasswordByEmail(email, hashed);
+        int updated = authRepository.updatePasswordByEmail(email, hashed);
         if (updated != 1) {
             throw new AuthException(AuthErrorCode.SERVER_ERROR);
         }
