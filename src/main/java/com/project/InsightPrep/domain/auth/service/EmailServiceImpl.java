@@ -6,6 +6,7 @@ import com.project.InsightPrep.domain.auth.exception.AuthException;
 import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.mapper.EmailMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
+import com.project.InsightPrep.domain.auth.repository.EmailRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class EmailServiceImpl implements EmailService {
     private final AuthMapper authMapper;
     private final AuthRepository authRepository;
     private final EmailMapper emailMapper;
+    private final EmailRepository emailRepository;
 
     private static final long EXPIRE_MINUTES = 10;
 
@@ -94,14 +96,16 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void currentEmailExisting(String email) {
-        EmailVerification currentExisting = emailMapper.findByEmail(email);
-        if (currentExisting == null) return;
-
-        if (currentExisting.getExpiresTime() == null || currentExisting.getExpiresTime().isBefore(LocalDateTime.now())) {
-            emailMapper.deleteByEmail(email);
-        } else {
-            throw new AuthException(AuthErrorCode.ALREADY_SEND_CODE_ERROR);
-        }
+        emailRepository.findByEmail(email)
+                .ifPresent(currentExisting -> {
+                    // 만료되었거나 expiresTime이 null이면 삭제
+                    if (currentExisting.getExpiresTime() == null || currentExisting.getExpiresTime().isBefore(LocalDateTime.now())) {
+                        emailRepository.deleteByEmail(email);
+                    } else {
+                        // 유효 기간이 남아있으면 예외 발생
+                        throw new AuthException(AuthErrorCode.ALREADY_SEND_CODE_ERROR);
+                    }
+                });
     }
 
     @Override
@@ -118,7 +122,7 @@ public class EmailServiceImpl implements EmailService {
                 .code(randomCode)
                 .expiresTime(LocalDateTime.now().plusMinutes(EXPIRE_MINUTES))  // 10분 후 만료
                 .build();
-        emailMapper.insertCode(code);
+        emailRepository.save(code);
         return code;
     }
 
@@ -134,14 +138,15 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Transactional
     public boolean verifyCode(String email, String code) {
-        return emailMapper.findByEmailAndCode(email, code)
+        return emailRepository.findByEmailAndCode(email, code)
                 .map(vc -> {
                     if (vc.getExpiresTime().isBefore(LocalDateTime.now())) {
                         throw new AuthException(AuthErrorCode.EXPIRED_CODE_ERROR); // 만료된 코드
                     }
 
-                    emailMapper.updateVerified(email, code); // 인증 완료 처리
+                    emailRepository.updateVerified(email, code); // 인증 완료 처리
                     return true;
                 })
                 .orElseThrow(() -> new AuthException(AuthErrorCode.CODE_NOT_MATCH_ERROR));
@@ -151,15 +156,13 @@ public class EmailServiceImpl implements EmailService {
     @Scheduled(cron = "0 0 12 * * ?")
     @Override
     public void deleteExpiredVerificationCodes() {
-        emailMapper.deleteByExpiresTimeBefore(LocalDateTime.now());
+        emailRepository.deleteByExpiresTimeBefore(LocalDateTime.now());
     }
 
     @Override
     public void validateEmailVerified(String email) {
-        EmailVerification verification = emailMapper.findByEmail(email);
-
-        if (verification == null || !verification.isVerified()) {
-            throw new AuthException(AuthErrorCode.EMAIL_VERIFICATION_ERROR);
-        }
+        emailRepository.findByEmail(email)
+                .filter(EmailVerification::isVerified)  // verified == true 인 경우만 통과
+                .orElseThrow(() -> new AuthException(AuthErrorCode.EMAIL_VERIFICATION_ERROR));
     }
 }
