@@ -11,6 +11,7 @@ import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.service.SharedPostService;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +27,14 @@ public class SharedPostServiceImpl implements SharedPostService {
     private final SecurityUtil securityUtil;
     private final SharedPostMapper sharedPostMapper;
     private final AnswerMapper answerMapper;
+    private final AnswerRepository answerRepository;
 
     @Override
     @Transactional
     public Long createPost(Create req) {
         long memberId = securityUtil.getLoginMemberId();
 
-        boolean myAnswer = answerMapper.existsMyAnswer(req.getAnswerId(), memberId);
+        boolean myAnswer = answerRepository.existsByIdAndMemberId(req.getAnswerId(), memberId);
         if (!myAnswer) {
             throw new PostException(PostErrorCode.FORBIDDEN_OR_NOT_FOUND_ANSWER);
         }

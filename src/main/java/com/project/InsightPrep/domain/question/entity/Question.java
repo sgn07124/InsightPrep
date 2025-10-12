@@ -41,4 +41,8 @@ public class Question extends BaseTimeEntity {
     public void markAsAnswered() {
         this.status = AnswerStatus.ANSWERED;
     }
+
+    public void markAsWaiting() {
+        this.status = AnswerStatus.WAITING;
+    }
 }

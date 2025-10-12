@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,7 @@ import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.lang.reflect.Field;
@@ -39,6 +41,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 @ExtendWith(MockitoExtension.class)
 class AnswerServiceImplTest {
@@ -57,6 +60,9 @@ class AnswerServiceImplTest {
 
     @Mock
     private AnswerMapper answerMapper;
+
+    @Mock
+    private AnswerRepository answerRepository;
 
     @Mock
     private FeedbackServiceImpl feedbackService;
@@ -95,7 +101,7 @@ class AnswerServiceImplTest {
             idField.setAccessible(true);
             idField.set(arg, 100L);
             return null;
-        }).when(answerMapper).insertAnswer(any(Answer.class));
+        }).when(answerRepository).save(any(Answer.class));
 
         // when
         AnswerResponse.AnswerDto res = answerService.saveAnswer(dto, questionId);
@@ -103,7 +109,7 @@ class AnswerServiceImplTest {
         // then
         verify(securityUtil).getAuthenticatedMember();
         verify(questionRepository).findById(questionId);
-        verify(answerMapper).insertAnswer(any(Answer.class));
+        verify(answerRepository).save(any(Answer.class));
 
         assertThat(mockQuestion.getStatus()).isEqualTo(AnswerStatus.ANSWERED);
 
@@ -133,7 +139,7 @@ class AnswerServiceImplTest {
         long answerId = 100L;
 
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
-        when(answerMapper.findQuestionIdOfMyAnswer(answerId, memberId)).thenReturn(null);
+        when(answerRepository.findById(answerId)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> answerService.deleteAnswer(answerId))
@@ -141,10 +147,11 @@ class AnswerServiceImplTest {
                 .matches(ex -> ((QuestionException) ex).getErrorCode() == QuestionErrorCode.QUESTION_NOT_FOUND);
 
         verify(securityUtil).getLoginMemberId();
-        verify(answerMapper).findQuestionIdOfMyAnswer(answerId, memberId);
-        verify(answerMapper, never()).deleteMyAnswerById(anyLong(), anyLong());
-        verify(answerMapper, never()).resetQuestionStatusIfNoAnswers(anyLong(), anyString());
-        verifyNoMoreInteractions(answerMapper, securityUtil);
+        verify(answerRepository).findById(answerId);
+        verify(answerRepository, never()).delete(any());
+        verify(questionRepository, never()).findById(anyLong());
+        verify(questionRepository, never()).save(any());
+        verifyNoMoreInteractions(answerRepository, questionRepository, securityUtil);
     }
 
     @Test
@@ -155,9 +162,14 @@ class AnswerServiceImplTest {
         long answerId = 100L;
         long questionId = 10L;
 
+        Member mockMember = Member.builder().id(memberId).build();
+        Question mockQuestion = Question.builder().id(questionId).category("OS").content("Q").build();
+        Answer mockAnswer = Answer.builder().id(answerId).member(mockMember).question(mockQuestion).content("A").build();
+
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
-        when(answerMapper.findQuestionIdOfMyAnswer(answerId, memberId)).thenReturn(questionId);
-        when(answerMapper.deleteMyAnswerById(answerId, memberId)).thenReturn(0); // 영향 0 → 이미 삭제
+        when(answerRepository.findById(answerId)).thenReturn(Optional.of(mockAnswer));
+        // 삭제 도중 예외 발생 확인 (이미 삭제된 상태 가정)
+        doThrow(new EmptyResultDataAccessException(1)).when(answerRepository).delete(mockAnswer);
 
         // when & then
         assertThatThrownBy(() -> answerService.deleteAnswer(answerId))
@@ -165,10 +177,9 @@ class AnswerServiceImplTest {
                 .matches(ex -> ((QuestionException) ex).getErrorCode() == QuestionErrorCode.ALREADY_DELETED);
 
         verify(securityUtil).getLoginMemberId();
-        verify(answerMapper).findQuestionIdOfMyAnswer(answerId, memberId);
-        verify(answerMapper).deleteMyAnswerById(answerId, memberId);
-        verify(answerMapper, never()).resetQuestionStatusIfNoAnswers(anyLong(), anyString());
-        verifyNoMoreInteractions(answerMapper, securityUtil);
+        verify(answerRepository).findById(answerId);
+        verify(answerRepository).delete(mockAnswer);
+        verifyNoMoreInteractions(answerRepository, questionRepository, securityUtil);
     }
 
     @Test
@@ -192,7 +203,7 @@ class AnswerServiceImplTest {
             idField.setAccessible(true);
             idField.set(arg, 123L); // PK 강제 설정
             return arg;
-        }).when(answerMapper).insertAnswer(any(Answer.class));
+        }).when(answerRepository).save(any(Answer.class));
 
         // when
         answerService.saveAnswer(dto, questionId);

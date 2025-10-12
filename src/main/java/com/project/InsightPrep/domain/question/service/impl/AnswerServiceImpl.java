@@ -5,13 +5,13 @@ import com.project.InsightPrep.domain.question.dto.request.AnswerRequest.AnswerD
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse;
 import com.project.InsightPrep.domain.question.dto.response.PreviewResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
-import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.event.AnswerSavedEvent;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.AnswerService;
 import com.project.InsightPrep.domain.question.service.FeedbackService;
@@ -19,6 +19,7 @@ import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class AnswerServiceImpl implements AnswerService {
     private final QuestionMapper questionMapper;
     private final QuestionRepository questionRepository;
     private final AnswerMapper answerMapper;
+    private final AnswerRepository answerRepository;
     private final FeedbackService feedbackService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -47,7 +49,7 @@ public class AnswerServiceImpl implements AnswerService {
                 .build();
 
         question.markAsAnswered();
-        answerMapper.insertAnswer(answer);
+        answerRepository.save(answer);
         //feedbackService.saveFeedback(answer);
         eventPublisher.publishEvent(new AnswerSavedEvent(answer));
         return AnswerResponse.AnswerDto.builder()
@@ -59,27 +61,35 @@ public class AnswerServiceImpl implements AnswerService {
     public void deleteAnswer(long answerId) {
         long memberId = securityUtil.getLoginMemberId();
 
-        Long questionId = answerMapper.findQuestionIdOfMyAnswer(answerId, memberId);
-        if (questionId == null) {
-            throw new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND);
-        }
+        Answer answer = answerRepository.findById(answerId)
+                .filter(a -> a.getMember().getId().equals(memberId))
+                .orElseThrow(() -> new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND));
 
-        int del = answerMapper.deleteMyAnswerById(answerId, memberId);
-        if (del == 0) {
+        Long questionId = answer.getQuestion().getId();
+
+        try {
+            answerRepository.delete(answer);
+        } catch (EmptyResultDataAccessException e) {
             throw new QuestionException(QuestionErrorCode.ALREADY_DELETED);
         }
 
-        answerMapper.resetQuestionStatusIfNoAnswers(questionId, AnswerStatus.WAITING.name());
+        if (answerRepository.countByQuestionId(questionId) == 0) {
+            Question question = questionRepository.findById(questionId)
+                    .orElseThrow(() -> new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND));
+            question.markAsWaiting();
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public PreviewResponse getPreview(long answerId) {
         long memberId = securityUtil.getLoginMemberId();
-        PreviewResponse res = answerMapper.findMyPreviewByAnswerId(answerId, memberId);
-        if (res == null) {
-            throw new QuestionException(QuestionErrorCode.ANSWER_NOT_FOUND);
-        }
-        return res;
+        Answer answer = answerRepository.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new QuestionException(QuestionErrorCode.ANSWER_NOT_FOUND));
+        Question question = answer.getQuestion();
+
+        return PreviewResponse.builder()
+                .question(question.getContent())
+                .answer(answer.getContent())
+                .build();
     }
 }

@@ -20,6 +20,7 @@ import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,6 +43,9 @@ class SharedPostServiceImplTest {
     @Mock
     AnswerMapper answerMapper;
 
+    @Mock
+    AnswerRepository answerRepository;
+
     @InjectMocks
     SharedPostServiceImpl service;
 
@@ -58,7 +62,7 @@ class SharedPostServiceImplTest {
                 .build();
 
         given(securityUtil.getLoginMemberId()).willReturn(memberId);
-        given(answerMapper.existsMyAnswer(answerId, memberId)).willReturn(true);
+        given(answerRepository.existsByIdAndMemberId(answerId, memberId)).willReturn(true);
         given(sharedPostMapper.insertSharedPost(eq("t"), eq("c"), eq(answerId), eq(memberId), eq(PostStatus.OPEN.name())))
                 .willReturn(1);
         given(sharedPostMapper.lastInsertedId()).willReturn(999L);
@@ -83,7 +87,7 @@ class SharedPostServiceImplTest {
                 .build();
 
         given(securityUtil.getLoginMemberId()).willReturn(memberId);
-        given(answerMapper.existsMyAnswer(answerId, memberId)).willReturn(false);
+        given(answerRepository.existsByIdAndMemberId(answerId, memberId)).willReturn(false);
 
         assertThatThrownBy(() -> service.createPost(req))
                 .isInstanceOf(PostException.class)
@@ -105,7 +109,7 @@ class SharedPostServiceImplTest {
                 .build();
 
         given(securityUtil.getLoginMemberId()).willReturn(memberId);
-        given(answerMapper.existsMyAnswer(answerId, memberId)).willReturn(true);
+        given(answerRepository.existsByIdAndMemberId(answerId, memberId)).willReturn(true);
         given(sharedPostMapper.insertSharedPost(anyString(), anyString(), anyLong(), anyLong(), anyString()))
                 .willReturn(0);
 

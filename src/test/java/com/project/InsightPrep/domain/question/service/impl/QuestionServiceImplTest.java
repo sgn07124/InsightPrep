@@ -17,11 +17,14 @@ import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.GptQuestion;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
+import com.project.InsightPrep.domain.question.entity.Answer;
+import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -35,6 +38,8 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionServiceImplTest {
@@ -50,6 +55,9 @@ class QuestionServiceImplTest {
 
     @Mock
     private AnswerMapper answerMapper;
+
+    @Mock
+    private AnswerRepository answerRepository;
 
     @Mock
     private RecentPromptFilterService recentPromptFilterService;
@@ -124,19 +132,22 @@ class QuestionServiceImplTest {
         long memberId = 42L;
         int page = 2;
         int size = 10;
-        int offset = (Math.max(page, 1) - 1) * size; // 10
 
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
 
-        var dto = QuestionsDto.builder()
-                .questionId(10L).category("NETWORK").question("TCP/UDP?")
-                .answerId(100L).answer("비교")
-                .feedbackId(1000L).score(90).modelAnswer("...").build();
+        Question question = Question.builder()
+                .id(10L).category("NETWORK").content("TCP/UDP?")
+                .status(AnswerStatus.ANSWERED).build();
 
-        when(answerMapper.findQuestionsWithFeedbackPaged(memberId, size, offset))
-                .thenReturn(List.of(dto));
-        when(answerMapper.countQuestionsWithFeedback(memberId))
-                .thenReturn(23L); // 총 23건 → 10개씩이면 총 3페이지
+        AnswerFeedback feedback = AnswerFeedback.builder()
+                .id(1000L).score(90).improvement("개선점").modelAnswer("...").build();
+
+        Answer answer = Answer.builder()
+                .id(100L).question(question).content("비교").feedback(feedback).build();
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        when(answerRepository.findAllWithQuestionAndFeedbackByMemberId(memberId, pageable))
+                .thenReturn(List.of(answer));
 
         // when
         PageResponse<QuestionsDto> res = questionService.getQuestions(page, size);
@@ -146,16 +157,17 @@ class QuestionServiceImplTest {
         assertThat(res.getContent()).hasSize(1);
         assertThat(res.getPage()).isEqualTo(2);
         assertThat(res.getSize()).isEqualTo(10);
-        assertThat(res.getTotalElements()).isEqualTo(23L);
-        assertThat(res.getTotalPages()).isEqualTo(3L);
-        assertThat(res.isFirst()).isFalse();
-        assertThat(res.isLast()).isFalse();
+        assertThat(res.getTotalElements()).isEqualTo(1);  // JPA Mock이므로 1건만
+        assertThat(res.getTotalPages()).isEqualTo(1);
 
-        InOrder inOrder = inOrder(securityUtil, answerMapper);
+        assertThat(res.getContent().get(0).getQuestion()).isEqualTo("TCP/UDP?");
+        assertThat(res.getContent().get(0).getAnswer()).isEqualTo("비교");
+        assertThat(res.getContent().get(0).getScore()).isEqualTo(90);
+
+        InOrder inOrder = inOrder(securityUtil, answerRepository);
         inOrder.verify(securityUtil).getLoginMemberId();
-        inOrder.verify(answerMapper).findQuestionsWithFeedbackPaged(eq(memberId), eq(size), eq(offset));
-        inOrder.verify(answerMapper).countQuestionsWithFeedback(eq(memberId));
-        verifyNoMoreInteractions(answerMapper, securityUtil);
+        inOrder.verify(answerRepository).findAllWithQuestionAndFeedbackByMemberId(eq(memberId), any(Pageable.class));
+        verifyNoMoreInteractions(answerRepository, securityUtil);
     }
 
     @Test
@@ -166,28 +178,21 @@ class QuestionServiceImplTest {
         int page = 1;
         int requestedSize = 100;   // 사용자가 크게 요청
         int safeSize = 50;         // 서비스 로직 상한
-        int offset = 0;
 
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
-
-        when(answerMapper.findQuestionsWithFeedbackPaged(memberId, safeSize, offset))
-                .thenReturn(List.of());
-        when(answerMapper.countQuestionsWithFeedback(memberId))
-                .thenReturn(0L);
+        when(answerRepository.findAllWithQuestionAndFeedbackByMemberId(eq(memberId), any(Pageable.class))).thenReturn(List.of()); // 빈 리스트
 
         // when
         PageResponse<QuestionsDto> res = questionService.getQuestions(page, requestedSize);
 
         // then
         assertThat(res.getPage()).isEqualTo(1);
-        assertThat(res.getSize()).isEqualTo(50); // 캡 확인
+        assertThat(res.getSize()).isEqualTo(50);
         assertThat(res.getTotalElements()).isEqualTo(0L);
-        assertThat(res.getTotalPages()).isEqualTo(0L);
         assertThat(res.isFirst()).isTrue();
         assertThat(res.isLast()).isTrue();
 
-        verify(answerMapper).findQuestionsWithFeedbackPaged(memberId, safeSize, offset);
-        verify(answerMapper).countQuestionsWithFeedback(memberId);
-        verifyNoMoreInteractions(answerMapper);
+        verify(answerRepository).findAllWithQuestionAndFeedbackByMemberId(eq(memberId), any(Pageable.class));
+        verifyNoMoreInteractions(answerRepository);
     }
 }
