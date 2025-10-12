@@ -28,8 +28,6 @@ public class Question extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: 관련 기업 - 등록된 기업에 한해서 선택 가능 (기업 선택 관련 기능은 추후 추가 예정)
-
     @Column(nullable = false)
     private String category; // OS, DB 등
 
@@ -39,4 +37,8 @@ public class Question extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AnswerStatus status = AnswerStatus.WAITING;
+
+    public void markAsAnswered() {
+        this.status = AnswerStatus.ANSWERED;
+    }
 }

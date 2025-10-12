@@ -25,8 +25,10 @@ import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.lang.reflect.Field;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
@@ -49,6 +51,9 @@ class AnswerServiceImplTest {
 
     @Mock
     private QuestionMapper questionMapper;
+
+    @Mock
+    private QuestionRepository questionRepository;
 
     @Mock
     private AnswerMapper answerMapper;
@@ -81,9 +86,8 @@ class AnswerServiceImplTest {
         AnswerDto dto = new AnswerDto("테스트 답변입니다.");
 
         when(securityUtil.getAuthenticatedMember()).thenReturn(mockMember);
-        when(questionMapper.findById(questionId)).thenReturn(mockQuestion);
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(mockQuestion));
 
-        doNothing().when(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
         // insertAnswer 호출 시, DB가 생성한 PK가 들어간 것처럼 id 세팅을 시뮬레이션
         doAnswer(invocation -> {
             Answer arg = invocation.getArgument(0);
@@ -98,9 +102,10 @@ class AnswerServiceImplTest {
 
         // then
         verify(securityUtil).getAuthenticatedMember();
-        verify(questionMapper).findById(questionId);
-        verify(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
+        verify(questionRepository).findById(questionId);
         verify(answerMapper).insertAnswer(any(Answer.class));
+
+        assertThat(mockQuestion.getStatus()).isEqualTo(AnswerStatus.ANSWERED);
 
         // 이벤트 객체 캡처
         ArgumentCaptor<AnswerSavedEvent> eventCaptor = ArgumentCaptor.forClass(AnswerSavedEvent.class);
@@ -117,7 +122,7 @@ class AnswerServiceImplTest {
         // 반환 DTO 검증 (서비스가 DTO를 반환하도록 구현되어 있다는 가정)
         assertThat(res).isNotNull();
         assertThat(res.getAnswerId()).isEqualTo(100L);
-        verifyNoMoreInteractions(securityUtil, questionMapper, answerMapper, feedbackService);
+        verifyNoMoreInteractions(securityUtil, questionRepository, answerMapper, feedbackService);
     }
 
     @Test
@@ -172,12 +177,21 @@ class AnswerServiceImplTest {
         Long questionId = 1L;
         AnswerDto dto = new AnswerDto("테스트 답변");
 
+        Question mockQuestion = Question.builder()
+                .id(questionId)
+                .category("DB")
+                .content("질문 내용")
+                .status(AnswerStatus.WAITING)
+                .build();
+
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(mockQuestion));
+
         doAnswer(invocation -> {
             Answer arg = invocation.getArgument(0);
             Field idField = Answer.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(arg, 123L); // PK 강제 설정
-            return null;
+            return arg;
         }).when(answerMapper).insertAnswer(any(Answer.class));
 
         // when
@@ -187,5 +201,7 @@ class AnswerServiceImplTest {
         Awaitility.await().atMost(3, TimeUnit.SECONDS).untilAsserted(() ->
                 verify(eventPublisher, times(1)).publishEvent(any(AnswerSavedEvent.class))
         );
+
+        assertThat(mockQuestion.getStatus()).isEqualTo(AnswerStatus.ANSWERED);
     }
 }

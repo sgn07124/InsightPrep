@@ -22,6 +22,7 @@ import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import com.project.InsightPrep.global.gpt.service.GptService;
@@ -43,6 +44,9 @@ class QuestionServiceImplTest {
 
     @Mock
     private QuestionMapper questionMapper;
+
+    @Mock
+    private QuestionRepository questionRepository;
 
     @Mock
     private AnswerMapper answerMapper;
@@ -81,14 +85,14 @@ class QuestionServiceImplTest {
         when(gptService.callOpenAI(any(), anyInt(), anyDouble(), any()))
                 .thenReturn(mockGptQuestion);
 
-        // insert 시 id 주입
+        // save() 호출 시 반환할 엔티티 mock
         doAnswer(invocation -> {
             Question q = invocation.getArgument(0);
             Field idField = Question.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(q, 123L);
-            return null;
-        }).when(questionMapper).insertQuestion(any(Question.class));
+            return q; // ✅ 중요: 동일 객체 반환
+        }).when(questionRepository).save(any(Question.class));
 
         // when
         QuestionResponse.QuestionDto result = questionService.createQuestion(category);
@@ -101,12 +105,12 @@ class QuestionServiceImplTest {
         assertEquals(AnswerStatus.WAITING, result.getStatus());
 
         // 핵심 상호작용 검증
-        InOrder inOrder = inOrder(securityUtil, recentPromptFilterService, gptService, questionMapper);
+        InOrder inOrder = inOrder(securityUtil, recentPromptFilterService, gptService, questionRepository);
         inOrder.verify(securityUtil).getLoginMemberId();
         inOrder.verify(recentPromptFilterService).getRecent(memberId, category, ItemType.TOPIC, 10);
         inOrder.verify(recentPromptFilterService).getRecent(memberId, category, ItemType.KEYWORD, 10);
         inOrder.verify(gptService).callOpenAI(any(), anyInt(), anyDouble(), any());
-        inOrder.verify(questionMapper).insertQuestion(any(Question.class));
+        inOrder.verify(questionRepository).save(any(Question.class));
         inOrder.verify(recentPromptFilterService).record(memberId, category, ItemType.TOPIC, "프로세스 vs 스레드");
         inOrder.verify(recentPromptFilterService).record(memberId, category, ItemType.KEYWORD, "thread");
 

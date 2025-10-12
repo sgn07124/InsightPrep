@@ -12,6 +12,7 @@ import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.AnswerService;
 import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -28,6 +29,7 @@ public class AnswerServiceImpl implements AnswerService {
 
     private final SecurityUtil securityUtil;
     private final QuestionMapper questionMapper;
+    private final QuestionRepository questionRepository;
     private final AnswerMapper answerMapper;
     private final FeedbackService feedbackService;
     private final ApplicationEventPublisher eventPublisher;
@@ -36,7 +38,7 @@ public class AnswerServiceImpl implements AnswerService {
     @Transactional
     public AnswerResponse.AnswerDto saveAnswer(AnswerDto dto, Long questionId) {
         Member member = securityUtil.getAuthenticatedMember();
-        Question question = questionMapper.findById(questionId);
+        Question question = questionRepository.findById(questionId).orElseThrow(() -> new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND));
 
         Answer answer = Answer.builder()
                 .member(member)
@@ -44,7 +46,7 @@ public class AnswerServiceImpl implements AnswerService {
                 .content(dto.getContent())
                 .build();
 
-        questionMapper.updateStatus(questionId, AnswerStatus.ANSWERED.name());
+        question.markAsAnswered();
         answerMapper.insertAnswer(answer);
         //feedbackService.saveFeedback(answer);
         eventPublisher.publishEvent(new AnswerSavedEvent(answer));

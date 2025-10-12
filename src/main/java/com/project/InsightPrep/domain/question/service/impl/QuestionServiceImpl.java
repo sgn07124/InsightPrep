@@ -10,6 +10,7 @@ import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -30,6 +31,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     private final GptService gptService;
     private final QuestionMapper questionMapper;
+    private final QuestionRepository questionRepository;
     private final AnswerMapper answerMapper;
     private final RecentPromptFilterService recentPromptFilterService;
     private final SecurityUtil securityUtil;
@@ -57,7 +59,7 @@ public class QuestionServiceImpl implements QuestionService {
                 .status(AnswerStatus.WAITING)
                 .build();
 
-        questionMapper.insertQuestion(question);
+        questionRepository.save(question);
 
         // 5) 기록 (Redis + DB) - 응답에 topic/keyword가 비어있을 수도 있으므로 방어
         if (isNotBlank(gptQuestion.getTopic())) {
