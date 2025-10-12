@@ -43,4 +43,7 @@ public class Member extends BaseTimeEntity {
     @Column(nullable = false)
     private int dailyLimit = 10;
 
+    public void updatePassword(String newHashedPassword) {
+        this.password = newHashedPassword;
+    }
 }

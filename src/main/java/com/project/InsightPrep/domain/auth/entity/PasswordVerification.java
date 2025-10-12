@@ -1,5 +1,8 @@
 package com.project.InsightPrep.domain.auth.entity;
 
+import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
+import com.project.InsightPrep.domain.auth.exception.AuthException;
+import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -58,4 +61,74 @@ public class PasswordVerification {
 
     @Column(name = "reset_used", nullable = false)
     private boolean resetUsed;
+
+    public PasswordVerification updateOtp(String codeHash, int attemptsLeft, boolean used, LocalDateTime expiresAt) {
+        this.codeHash = codeHash;
+        this.attemptsLeft = attemptsLeft;
+        this.used = used;
+        this.expiresAt = expiresAt;
+        this.createdAt = LocalDateTime.now();
+        return this;
+    }
+
+    public static PasswordVerification createNew(String email, String codeHash, int attemptsLeft, boolean used, LocalDateTime expiresAt) {
+        return PasswordVerification.builder()
+                .email(email)
+                .codeHash(codeHash)
+                .attemptsLeft(attemptsLeft)
+                .used(used)
+                .expiresAt(expiresAt)
+                .createdAt(LocalDateTime.now())
+                .resetUsed(false)
+                .build();
+    }
+
+    /** OTP 유효성 검증 */
+    public void validateOtp(SecurityUtil securityUtil, String inputCode) {
+        if (this.used) {
+            throw new AuthException(AuthErrorCode.OTP_ALREADY_USED);
+        }
+
+        if (this.expiresAt.isBefore(LocalDateTime.now())) {
+            throw new AuthException(AuthErrorCode.EXPIRED_CODE_ERROR);
+        }
+
+        boolean matched = securityUtil.matches(inputCode, this.codeHash);
+        if (!matched) {
+            this.decreaseAttempts();
+            if (this.attemptsLeft <= 0) {
+                this.markOtpUsed();
+                throw new AuthException(AuthErrorCode.OTP_INVALID);
+            }
+            throw new AuthException(AuthErrorCode.OTP_INVALID_ATTEMPT);
+        }
+    }
+
+    /** OTP 시도 횟수를 감소시킵니다. */
+    public void decreaseAttempts() {
+        if (this.attemptsLeft > 0) {
+            this.attemptsLeft -= 1;
+        }
+    }
+
+    /** OTP를 사용 처리합니다. */
+    public void markOtpUsed() {
+        this.used = true;
+        this.usedAt = LocalDateTime.now();
+    }
+
+    /** 새로운 비밀번호 재설정 토큰을 발급합니다. */
+    public void issueResetToken(String token, LocalDateTime expiresAt) {
+        this.resetToken = token;
+        this.resetUsed = false;
+        this.resetExpiresAt = expiresAt;
+    }
+
+    /** 재설정 토큰을 사용 처리합니다. */
+    public void markResetTokenUsed() {
+        this.resetUsed = true;
+        this.resetToken = null;
+        this.resetExpiresAt = null;
+        this.usedAt = LocalDateTime.now();
+    }
 }
