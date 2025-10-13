@@ -7,6 +7,7 @@ import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.FeedbackMapper;
+import com.project.InsightPrep.domain.question.repository.FeedbackRepository;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
 import com.project.InsightPrep.global.gpt.service.GptService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,9 @@ class FeedbackEventListenerTest {
 
     @Mock
     private FeedbackMapper feedbackMapper;
+
+    @Mock
+    private FeedbackRepository feedbackRepository;
 
     @InjectMocks
     private FeedbackEventListener feedbackEventListener;
@@ -70,7 +74,7 @@ class FeedbackEventListenerTest {
 
         // then
         ArgumentCaptor<AnswerFeedback> captor = ArgumentCaptor.forClass(AnswerFeedback.class);
-        verify(feedbackMapper, times(1)).insertFeedback(captor.capture());
+        verify(feedbackRepository, times(1)).save(captor.capture());
 
         AnswerFeedback saved = captor.getValue();
         assertThat(saved.getAnswer()).isEqualTo(answer);
@@ -87,7 +91,7 @@ class FeedbackEventListenerTest {
 
         // when & then
         assertThrows(QuestionException.class, () -> feedbackEventListener.handleAnswerSaved(event));
-        verify(feedbackMapper, never()).insertFeedback(any());
+        verify(feedbackRepository, never()).save(any());
     }
 
     @Test
@@ -105,6 +109,6 @@ class FeedbackEventListenerTest {
 
 
         assertThrows(QuestionException.class, () -> feedbackEventListener.handleAnswerSaved(event));
-        verify(feedbackMapper, never()).insertFeedback(any());
+        verify(feedbackRepository, never()).save(any());
     }
 }

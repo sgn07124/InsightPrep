@@ -6,6 +6,7 @@ import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.FeedbackMapper;
+import com.project.InsightPrep.domain.question.repository.FeedbackRepository;
 import com.project.InsightPrep.global.gpt.prompt.PromptFactory;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
 import com.project.InsightPrep.global.gpt.service.GptService;
@@ -23,6 +24,7 @@ public class FeedbackEventListener {
 
     private final GptService gptService;
     private final FeedbackMapper feedbackMapper;
+    private final FeedbackRepository feedbackRepository;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -43,7 +45,7 @@ public class FeedbackEventListener {
                 .improvement(gptResult.getImprovement())
                 .build();
 
-        feedbackMapper.insertFeedback(feedback);
+        feedbackRepository.save(feedback);
         log.info("Feedback saved for Answer id = {}", answer.getId());
     }
 }

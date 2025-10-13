@@ -4,11 +4,15 @@ import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.Feedb
 import com.project.InsightPrep.domain.question.dto.response.FeedbackResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
+import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
+import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.FeedbackMapper;
+import com.project.InsightPrep.domain.question.repository.FeedbackRepository;
 import com.project.InsightPrep.domain.question.service.FeedbackService;
 import com.project.InsightPrep.global.gpt.prompt.PromptFactory;
 import com.project.InsightPrep.global.gpt.service.GptResponseType;
 import com.project.InsightPrep.global.gpt.service.GptService;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -22,6 +26,7 @@ public class FeedbackServiceImpl implements FeedbackService {
 
     private final GptService gptService;
     private final FeedbackMapper feedbackMapper;
+    private final FeedbackRepository feedbackRepository;
 
     @Transactional
     @Async
@@ -37,17 +42,18 @@ public class FeedbackServiceImpl implements FeedbackService {
                 .improvement(gptResult.getImprovement())
                 .build();
 
-        feedbackMapper.insertFeedback(feedback);
+        feedbackRepository.save(feedback);
     }
 
     @Override
     @Transactional(readOnly = true)
     public FeedbackDto getFeedback(long answerId) {
-        AnswerFeedback feedback = feedbackMapper.findById(answerId);
-        if (feedback == null) {
+        Optional<AnswerFeedback> optionalFeedback = feedbackRepository.findByAnswerId(answerId);
+        if (optionalFeedback.isEmpty()) {
             return null;
         }
-        System.out.println(feedback.getAnswer().getContent());
+        AnswerFeedback feedback = optionalFeedback.get();
+
         return FeedbackDto.builder()
                 .feedbackId(feedback.getId())
                 .questionId(feedback.getAnswer().getQuestion().getId())

@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.project.InsightPrep.domain.question.dto.response.AnswerResponse.FeedbackDto;
@@ -12,8 +14,11 @@ import com.project.InsightPrep.domain.question.dto.response.FeedbackResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.entity.Question;
+import com.project.InsightPrep.domain.question.exception.QuestionException;
 import com.project.InsightPrep.domain.question.mapper.FeedbackMapper;
+import com.project.InsightPrep.domain.question.repository.FeedbackRepository;
 import com.project.InsightPrep.global.gpt.service.GptServiceImpl;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +38,9 @@ class FeedbackServiceImplTest {
 
     @Mock
     private FeedbackMapper feedbackMapper;
+
+    @Mock
+    private FeedbackRepository feedbackRepository;
 
     @Test
     @DisplayName("피드백 저장 - GPT 호출과 삽입 테스트")
@@ -62,7 +70,7 @@ class FeedbackServiceImplTest {
 
         // then
         ArgumentCaptor<AnswerFeedback> captor = ArgumentCaptor.forClass(AnswerFeedback.class);
-        verify(feedbackMapper).insertFeedback(captor.capture());
+        verify(feedbackRepository).save(captor.capture());
 
         AnswerFeedback savedFeedback = captor.getValue();
         assertEquals(4, savedFeedback.getScore());
@@ -94,7 +102,7 @@ class FeedbackServiceImplTest {
                 .modelAnswer("정답 예시...")
                 .build();
 
-        given(feedbackMapper.findById(2L)).willReturn(feedback);
+        given(feedbackRepository.findByAnswerId(2L)).willReturn(Optional.of(feedback));
 
         // when
         FeedbackDto result = feedbackService.getFeedback(2L);
@@ -113,12 +121,13 @@ class FeedbackServiceImplTest {
     @DisplayName("피드백 조회 - 피드백 존재하지 않은 경우 null 리턴 테스트")
     void getFeedback_shouldReturnNull_whenFeedbackDoesNotExist() {
         // given
-        given(feedbackMapper.findById(99L)).willReturn(null);
+        Long answerId = 99L;
+        given(feedbackRepository.findByAnswerId(99L)).willReturn(Optional.empty());
 
         // when
-        FeedbackDto result = feedbackService.getFeedback(99L);
+        var result = feedbackService.getFeedback(answerId);
 
-        // then
         assertNull(result);
+        then(feedbackRepository).should(times(1)).findByAnswerId(answerId);
     }
 }
