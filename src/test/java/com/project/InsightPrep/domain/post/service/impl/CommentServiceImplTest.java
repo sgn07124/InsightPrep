@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -23,6 +24,7 @@ import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.post.mapper.CommentMapper;
 import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
+import com.project.InsightPrep.domain.post.reqository.CommentRepository;
 import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -38,6 +40,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class CommentServiceImplTest {
@@ -53,6 +58,9 @@ class CommentServiceImplTest {
 
     @Mock
     CommentMapper commentMapper;
+
+    @Mock
+    CommentRepository commentRepository;
 
     @InjectMocks
     CommentServiceImpl commentService;
@@ -95,7 +103,7 @@ class CommentServiceImplTest {
                     idField.set(c, 777L);
                 } catch (Exception ignored) {}
                 return null;
-            }).when(commentMapper).insertComment(any(Comment.class));
+            }).when(commentRepository).save(any(Comment.class));
 
             CreateDto req = new CreateDto("첫 댓글");
 
@@ -109,7 +117,7 @@ class CommentServiceImplTest {
 
             verify(securityUtil).getAuthenticatedMember();
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).insertComment(any(Comment.class));
+            verify(commentRepository).save(any(Comment.class));
         }
 
         @Test
@@ -136,22 +144,33 @@ class CommentServiceImplTest {
         @Test
         @DisplayName("성공 - 본인 댓글 & 같은 postId")
         void update_success() {
+            // given
             long postId = 10L;
             long commentId = 200L;
             long me = 1L;
 
-            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId))
-                    .thenReturn(new CommentRow(commentId, postId, me, "old"));
-            when(securityUtil.getLoginMemberId()).thenReturn(me);
-            when(commentMapper.updateContent(commentId, me, "new content")).thenReturn(1);
+            Member member = Member.builder().id(me).nickname("tester").build();
+            SharedPost post = SharedPost.builder().id(postId).build();
+            Comment comment = Comment.builder()
+                    .id(commentId)
+                    .content("old")
+                    .member(member)
+                    .sharedPost(post)
+                    .build();
 
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+            when(securityUtil.getLoginMemberId()).thenReturn(me);
+
+            // when
             commentService.updateComment(postId, commentId, new UpdateDto("new content"));
 
+            // then
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
+            verify(commentRepository).findById(commentId);
             verify(securityUtil).getLoginMemberId();
-            verify(commentMapper).updateContent(commentId, me, "new content");
+
+            assertThat(comment.getContent()).isEqualTo("new content");
         }
 
         @Test
@@ -176,8 +195,9 @@ class CommentServiceImplTest {
         void update_comment_not_found() {
             long postId = 10L;
             long commentId = 200L;
+
             when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId)).thenReturn(null);
+            when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     commentService.updateComment(postId, commentId, new UpdateDto("x"))
@@ -185,8 +205,7 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
-            verifyNoMoreInteractions(commentMapper);
+            verify(commentRepository).findById(commentId);
             verifyNoInteractions(securityUtil);
         }
 
@@ -195,19 +214,27 @@ class CommentServiceImplTest {
         void update_wrong_postId() {
             long postId = 10L;
             long commentId = 200L;
-            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            // 댓글이 다른 postId에 속함
-            when(commentMapper.findRowById(commentId))
-                    .thenReturn(new CommentRow(commentId, 999L, 1L, "x"));
+
+            SharedPost requestedPost = SharedPost.builder().id(postId).build();
+            SharedPost otherPost = SharedPost.builder().id(999L).build();
+
+            Member member = Member.builder().id(1L).build();
+            Comment comment = Comment.builder()
+                    .id(commentId)
+                    .content("x")
+                    .member(member)
+                    .sharedPost(otherPost)
+                    .build();
+
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(requestedPost));
+            when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
             assertThatThrownBy(() ->
                     commentService.updateComment(postId, commentId, new UpdateDto("x"))
-            ).isInstanceOf(PostException.class)
-                    .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
+            ).isInstanceOf(PostException.class).hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
-            verifyNoMoreInteractions(commentMapper);
+            verify(commentRepository).findById(commentId);
             verifyNoInteractions(securityUtil);
         }
 
@@ -219,9 +246,18 @@ class CommentServiceImplTest {
             long owner = 1L;
             long me = 2L;
 
-            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId))
-                    .thenReturn(new CommentRow(commentId, postId, owner, "x"));
+            SharedPost post = SharedPost.builder().id(postId).build();
+            Member author = Member.builder().id(owner).build();
+
+            Comment comment = Comment.builder()
+                    .id(commentId)
+                    .content("x")
+                    .member(author)
+                    .sharedPost(post)
+                    .build();
+
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
 
             assertThatThrownBy(() ->
@@ -230,9 +266,8 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.COMMENT_FORBIDDEN.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
+            verify(commentRepository).findById(commentId);
             verify(securityUtil).getLoginMemberId();
-            verifyNoMoreInteractions(commentMapper);
         }
     }
 
@@ -248,18 +283,28 @@ class CommentServiceImplTest {
             long commentId = 200L;
             long me = 1L;
 
-            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId))
-                    .thenReturn(new CommentRow(commentId, postId, me, "x"));
-            when(securityUtil.getLoginMemberId()).thenReturn(me);
-            when(commentMapper.deleteByIdAndMember(commentId, me)).thenReturn(1);
+            // given
+            Member member = Member.builder().id(me).build();
+            SharedPost post = SharedPost.builder().id(postId).build();
+            Comment comment = Comment.builder()
+                    .id(commentId)
+                    .content("x")
+                    .member(member)
+                    .sharedPost(post)
+                    .build();
 
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+            when(securityUtil.getLoginMemberId()).thenReturn(me);
+
+            // when
             commentService.deleteComment(postId, commentId);
 
+            // then
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
+            verify(commentRepository).findById(commentId);
             verify(securityUtil).getLoginMemberId();
-            verify(commentMapper).deleteByIdAndMember(commentId, me);
+            verify(commentRepository).delete(comment);
         }
 
         @Test
@@ -285,15 +330,14 @@ class CommentServiceImplTest {
             long commentId = 200L;
 
             when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId)).thenReturn(null);
+            when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> commentService.deleteComment(postId, commentId))
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
-            verifyNoMoreInteractions(commentMapper);
+            verify(commentRepository).findById(commentId);
             verifyNoInteractions(securityUtil);
         }
 
@@ -303,31 +347,49 @@ class CommentServiceImplTest {
             long postId = 10L;
             long commentId = 200L;
 
-            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId))
-                    .thenReturn(new CommentRow(commentId, 999L, 1L, "x"));
+            SharedPost requestedPost = SharedPost.builder().id(postId).build();
+            SharedPost otherPost = SharedPost.builder().id(999L).build();
+            Member member = Member.builder().id(1L).build();
+
+            Comment comment = Comment.builder()
+                    .id(commentId)
+                    .content("x")
+                    .member(member)
+                    .sharedPost(otherPost)
+                    .build();
+
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(requestedPost));
+            when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
             assertThatThrownBy(() -> commentService.deleteComment(postId, commentId))
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
-            verifyNoMoreInteractions(commentMapper);
+            verify(commentRepository).findById(commentId);
             verifyNoInteractions(securityUtil);
         }
 
         @Test
-        @DisplayName("실패 - 본인 아님 → COMMENT_FORBIDDEN (현재 구현상 delete 쿼리는 수행됨)")
+        @DisplayName("실패 - 본인 아님 → COMMENT_FORBIDDEN")
         void delete_forbidden() {
             long postId = 10L;
             long commentId = 200L;
             long owner = 1L;
             long me = 2L;
 
-            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
-            when(commentMapper.findRowById(commentId))
-                    .thenReturn(new CommentRow(commentId, postId, owner, "x"));
+            SharedPost post = SharedPost.builder().id(postId).build();
+            Member author = Member.builder().id(owner).build();
+
+            Comment comment = Comment.builder()
+                    .id(commentId)
+                    .content("x")
+                    .member(author)
+                    .sharedPost(post)
+                    .build();
+
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
 
             assertThatThrownBy(() -> commentService.deleteComment(postId, commentId))
@@ -335,9 +397,9 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.COMMENT_FORBIDDEN.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verify(commentMapper).findRowById(commentId);
+            verify(commentRepository).findById(commentId);
             verify(securityUtil).getLoginMemberId();
-            verifyNoMoreInteractions(commentMapper);
+            verify(commentRepository, never()).delete(any());
         }
     }
 
@@ -380,17 +442,34 @@ class CommentServiceImplTest {
 
             // 댓글 더미(한 개는 내가 쓴 댓글, 한 개는 타인 댓글)
             var now = LocalDateTime.now();
-            List<CommentListItem> dbRows = List.of(
-                    item(101L, 10L, "me", "my comment", now.minusMinutes(2)),
-                    item(102L, 20L, "u", "your comment", now.minusMinutes(1))
-            );
-            when(commentMapper.findByPostPaged(postId, size, 0)).thenReturn(dbRows);
-            when(commentMapper.countByPost(postId)).thenReturn(2L);
+
+            // 댓글 엔티티 2개 (내 댓글, 타인 댓글)
+            Member meMember = Member.builder().id(me).nickname("me").build();
+            Member otherMember = Member.builder().id(20L).nickname("u").build();
+            SharedPost post = stubPost(postId);
+
+            Comment myComment = Comment.builder()
+                    .id(101L)
+                    .content("my comment")
+                    .member(meMember)
+                    .sharedPost(post)
+                    .build();
+
+            Comment yourComment = Comment.builder()
+                    .id(102L)
+                    .content("your comment")
+                    .member(otherMember)
+                    .sharedPost(post)
+                    .build();
+
+            Page<Comment> commentPage = new PageImpl<>(List.of(myComment, yourComment));
+            when(commentRepository.findBySharedPost_IdOrderByCreatedAtAscIdAsc(eq(postId), any(Pageable.class)))
+                    .thenReturn(commentPage);
+            when(commentRepository.countBySharedPost_Id(postId)).thenReturn(2L);
             when(securityUtil.getLoginMemberId()).thenReturn(me);
 
             PageResponse<CommentListItem> pageRes = commentService.getComments(postId, page, size);
 
-            // 반환 검증
             assertThat(pageRes.getPage()).isEqualTo(1);
             assertThat(pageRes.getSize()).isEqualTo(10);
             assertThat(pageRes.getTotalElements()).isEqualTo(2L);
@@ -399,29 +478,27 @@ class CommentServiceImplTest {
             // mine 플래그 검증
             assertThat(pageRes.getContent().get(0).getCommentId()).isEqualTo(101L);
             assertThat(pageRes.getContent().get(0).isMine()).isTrue();
-
             assertThat(pageRes.getContent().get(1).getCommentId()).isEqualTo(102L);
             assertThat(pageRes.getContent().get(1).isMine()).isFalse();
 
-            // 호출 파라미터 검증
-            verify(commentMapper).findByPostPaged(postId, size, 0);
-            verify(commentMapper).countByPost(postId);
+            verify(commentRepository).findBySharedPost_IdOrderByCreatedAtAscIdAsc(eq(postId), any(Pageable.class));
+            verify(commentRepository).countBySharedPost_Id(postId);
             verify(securityUtil).getLoginMemberId();
         }
 
         @Test
-        @DisplayName("page<1 이면 1로 보정, size>50 이면 50으로 보정하여 limit/offset 계산")
+        @DisplayName("page<1 이면 1로 보정, size>50 이면 50으로 보정")
         void page_and_size_sanitization() {
             long postId = 1L;
             int reqPage = 0;   // 보정 대상
             int reqSize = 100; // 보정 대상(최대 50)
             int safePage = 1;
             int safeSize = 50;
-            int expectedOffset = 0;
 
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(stubPost(postId)));
             when(securityUtil.getLoginMemberId()).thenReturn(999L);
-            when(commentMapper.findByPostPaged(postId, safeSize, expectedOffset)).thenReturn(List.of());
-            when(commentMapper.countByPost(postId)).thenReturn(0L);
+            when(commentRepository.findBySharedPost_IdOrderByCreatedAtAscIdAsc(eq(postId), any(Pageable.class))).thenReturn(Page.empty());
+            when(commentRepository.countBySharedPost_Id(postId)).thenReturn(0L);
 
             PageResponse<CommentListItem> pageRes = commentService.getComments(postId, reqPage, reqSize);
 
@@ -430,53 +507,30 @@ class CommentServiceImplTest {
             assertThat(pageRes.getTotalElements()).isZero();
             assertThat(pageRes.getContent()).isEmpty();
 
-            // limit/offset 정확히 호출되었는지 캡쳐로 재확인
-            ArgumentCaptor<Integer> limitCap = ArgumentCaptor.forClass(Integer.class);
-            ArgumentCaptor<Integer> offsetCap = ArgumentCaptor.forClass(Integer.class);
-            verify(commentMapper).findByPostPaged(eq(postId), limitCap.capture(), offsetCap.capture());
-            assertThat(limitCap.getValue()).isEqualTo(safeSize);
-            assertThat(offsetCap.getValue()).isEqualTo(expectedOffset);
+            verify(commentRepository).findBySharedPost_IdOrderByCreatedAtAscIdAsc(eq(postId), any(Pageable.class));
+            verify(commentRepository).countBySharedPost_Id(postId);
         }
 
         @Test
-        @DisplayName("page가 2 이상이면 올바른 offset 계산((page-1)*size)")
+        @DisplayName("page가 2 이상이면 올바른 offset(Pageable의 page index 반영)")
         void offset_calculation_when_page_gt_1() {
             long postId = 1L;
             int page = 3;
             int size = 20;
-            int expectedOffset = (page - 1) * size; // 40
 
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(stubPost(postId)));
+            when(commentRepository.findBySharedPost_IdOrderByCreatedAtAscIdAsc(eq(postId), any(Pageable.class))).thenReturn(Page.empty());
+            when(commentRepository.countBySharedPost_Id(postId)).thenReturn(0L);
             when(securityUtil.getLoginMemberId()).thenReturn(1L);
-            when(commentMapper.findByPostPaged(postId, size, expectedOffset)).thenReturn(List.of());
-            when(commentMapper.countByPost(postId)).thenReturn(0L);
 
             commentService.getComments(postId, page, size);
 
-            verify(commentMapper).findByPostPaged(postId, size, expectedOffset);
-        }
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(commentRepository).findBySharedPost_IdOrderByCreatedAtAscIdAsc(eq(postId), pageableCaptor.capture());
+            Pageable usedPageable = pageableCaptor.getValue();
 
-        @Test
-        @DisplayName("DB가 null authorId를 반환해도 NPE 없이 mine=false 처리")
-        void null_author_id_safe_mine_false() {
-            long postId = 1L;
-            long me = 7L;
-
-            CommentListItem row = CommentListItem.builder()
-                    .commentId(1L)
-                    .authorId(null) // 의도적으로 null
-                    .authorNickname("anon")
-                    .content("hi")
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            when(commentMapper.findByPostPaged(postId, 10, 0)).thenReturn(List.of(row));
-            when(commentMapper.countByPost(postId)).thenReturn(1L);
-            when(securityUtil.getLoginMemberId()).thenReturn(me);
-
-            PageResponse<CommentListItem> res = commentService.getComments(postId, 1, 10);
-
-            assertThat(res.getContent()).hasSize(1);
-            assertThat(res.getContent().get(0).isMine()).isFalse();
+            assertThat(usedPageable.getPageNumber()).isEqualTo(page - 1); // JPA는 0-based page index
+            assertThat(usedPageable.getPageSize()).isEqualTo(size);
         }
     }
 }

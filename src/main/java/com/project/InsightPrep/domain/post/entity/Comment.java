@@ -42,4 +42,8 @@ public class Comment extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
     private SharedPost sharedPost;
+
+    public void updateContent(String newContent) {
+        this.content = newContent;
+    }
 }
