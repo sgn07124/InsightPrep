@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.RecentPromptFilter;
 import com.project.InsightPrep.domain.question.mapper.RecentPromptFilterMapper;
+import com.project.InsightPrep.domain.question.repository.RecentPromptFilterRepository;
 import java.time.Duration;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 
@@ -26,6 +28,8 @@ class RecentPromptFilterServiceImplTest {
 
     @Mock StringRedisTemplate redis;
     @Mock RecentPromptFilterMapper recentMapper;
+    @Mock
+    RecentPromptFilterRepository recentPromptFilterRepository;
     @Mock ZSetOperations<String, String> zset;
 
     @InjectMocks RecentPromptFilterServiceImpl service;
@@ -49,17 +53,22 @@ class RecentPromptFilterServiceImplTest {
         @Test
         @DisplayName("record() - 정상: DB insert + Redis ZSET add + TTL + 오래된 항목 trim")
         void record_ok() {
-            // given: DB insert 정상
-            doNothing().when(recentMapper).insert(any(RecentPromptFilter.class));
+            // given: 존재하지 않음 → save() 호출 예상
+            when(recentPromptFilterRepository.existsByMemberIdAndCategoryAndItemTypeAndItemValue(
+                    memberId, category, type, value
+            )).thenReturn(false);
+
             // size가 15라고 가정 → MAX_SIZE(10) 초과 → 0..4 삭제 호출
             when(zset.size(key)).thenReturn(15L);
 
             // when
             service.record(memberId, category, type, value);
 
-            // then: DB insert 호출
+            // then: existsBy + save 호출 검증
+            verify(recentPromptFilterRepository).existsByMemberIdAndCategoryAndItemTypeAndItemValue(memberId, category, type, value);
             ArgumentCaptor<RecentPromptFilter> cap = ArgumentCaptor.forClass(RecentPromptFilter.class);
-            verify(recentMapper).insert(cap.capture());
+            verify(recentPromptFilterRepository).save(cap.capture());
+
             RecentPromptFilter saved = cap.getValue();
             assertThat(saved.getMemberId()).isEqualTo(memberId);
             assertThat(saved.getCategory()).isEqualTo(category);
@@ -75,22 +84,25 @@ class RecentPromptFilterServiceImplTest {
         }
 
         @Test
-        @DisplayName("record() - DB 유니크 충돌 시 예외 무시하고 Redis는 정상 갱신")
-        void record_duplicate_ignoreDbError() {
-            // given: unique 제약 충돌 유발
-            doThrow(new DataIntegrityViolationException("dup")).when(recentMapper).insert(any(RecentPromptFilter.class));
-            when(zset.size(key)).thenReturn(1L); // trim 안 일어나도록
+        @DisplayName("record() - 이미 존재하는 경우 save() 호출 안함, Redis는 정상 갱신")
+        void record_alreadyExists_noSave() {
+            // given: 이미 존재 → existsBy == true → save() 안함
+            when(recentPromptFilterRepository.existsByMemberIdAndCategoryAndItemTypeAndItemValue(
+                    memberId, category, type, value
+            )).thenReturn(true);
 
-            // when/then
-            assertDoesNotThrow(() -> service.record(memberId, category, type, value));
+            when(zset.size(key)).thenReturn(5L); // trim 없음
 
-            // DB insert 시도는 했지만, 예외는 흡수
-            verify(recentMapper).insert(any(RecentPromptFilter.class));
+            // when
+            service.record(memberId, category, type, value);
 
-            // Redis는 정상 갱신
+            // then: DB 저장은 안됨
+            verify(recentPromptFilterRepository).existsByMemberIdAndCategoryAndItemTypeAndItemValue(memberId, category, type, value);
+            verify(recentPromptFilterRepository, never()).save(any());
+
+            // Redis는 정상 갱신됨
             verify(zset).add(eq(key), eq(value), anyDouble());
             verify(redis).expire(eq(key), eq(RecentPromptFilterServiceImpl.TTL));
-            // size가 MAX 이하 → trim 안 함
             verify(zset, never()).removeRange(anyString(), anyLong(), anyLong());
         }
     }
@@ -99,7 +111,7 @@ class RecentPromptFilterServiceImplTest {
     class GetRecentTests {
 
         @Test
-        @DisplayName("getRecent() - 캐시 HIT: Redis ZSET에서 최신 N개 반환, DAO 호출 안 함")
+        @DisplayName("getRecent() - 캐시 HIT: Redis ZSET에서 최신 N개 반환, Repository 호출 안 함")
         void getRecent_cacheHit() {
             // given
             Set<String> cached = new LinkedHashSet<>(List.of("a", "b", "c"));
@@ -110,7 +122,8 @@ class RecentPromptFilterServiceImplTest {
 
             // then
             assertThat(res).containsExactly("a", "b", "c");
-            verify(recentMapper, never()).findTopNByUserCategoryType(anyLong(), anyString(), any(), anyInt());
+            verify(recentPromptFilterRepository, never()).findByMemberIdAndCategoryAndItemTypeOrderByCreatedAtDesc(anyLong(), anyString(), any(), any(
+                    Pageable.class));
             verify(redis, never()).expire(anyString(), any(Duration.class)); // 캐시 HIT 시 expire 갱신 안 함(구현 그대로 검증)
         }
 
@@ -120,21 +133,29 @@ class RecentPromptFilterServiceImplTest {
             // given: 캐시 미스
             when(zset.reverseRange(key, 0, 9)).thenReturn(Collections.emptySet());
 
-            List<String> fromDb = List.of("t1", "t2", "t3");
-            when(recentMapper.findTopNByUserCategoryType(memberId, category, type, 10))
-                    .thenReturn(fromDb);
+            // DB에서 반환될 mock 엔티티 리스트
+            List<RecentPromptFilter> fromDbEntities = List.of(
+                    RecentPromptFilter.builder().itemValue("t1").build(),
+                    RecentPromptFilter.builder().itemValue("t2").build(),
+                    RecentPromptFilter.builder().itemValue("t3").build()
+            );
+
+            when(recentPromptFilterRepository.findByMemberIdAndCategoryAndItemTypeOrderByCreatedAtDesc(eq(memberId), eq(category), eq(type), any(Pageable.class)))
+                    .thenReturn(fromDbEntities);
 
             // when
             List<String> res = service.getRecent(memberId, category, type, 10);
 
             // then
-            assertThat(res).containsExactlyElementsOf(fromDb);
+            assertThat(res).containsExactly("t1", "t2", "t3");
 
-            // DB 호출
-            verify(recentMapper).findTopNByUserCategoryType(memberId, category, type, 10);
+            // DB 호출 검증
+            verify(recentPromptFilterRepository).findByMemberIdAndCategoryAndItemTypeOrderByCreatedAtDesc(
+                    eq(memberId), eq(category), eq(type), any(Pageable.class)
+            );
 
             // Redis warm-up: add 3번 + expire
-            verify(zset, times(fromDb.size())).add(eq(key), anyString(), anyDouble());
+            verify(zset, times(fromDbEntities.size())).add(eq(key), anyString(), anyDouble());
             verify(redis).expire(eq(key), eq(RecentPromptFilterServiceImpl.TTL));
         }
     }

@@ -3,6 +3,7 @@ package com.project.InsightPrep.domain.question.service.impl;
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.RecentPromptFilter;
 import com.project.InsightPrep.domain.question.mapper.RecentPromptFilterMapper;
+import com.project.InsightPrep.domain.question.repository.RecentPromptFilterRepository;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class RecentPromptFilterServiceImpl implements RecentPromptFilterService 
 
     private final StringRedisTemplate redis;
     private final RecentPromptFilterMapper recentMapper;
+    private final RecentPromptFilterRepository recentPromptFilterRepository;
     private static final String KEY_FMT = "rp:%d:%s:%s";  // memberId, category, type
     public static final int MAX_SIZE = 10;
     public static final Duration TTL = Duration.ofDays(14); // 만료일
@@ -29,17 +33,16 @@ public class RecentPromptFilterServiceImpl implements RecentPromptFilterService 
     @Override
     @Transactional
     public void record(long memberId, String category, ItemType type, String value) {
-        // DB 영구 저장 (unique 제약 조건으로 중복 방지)
-        RecentPromptFilter recentPromptFilter = RecentPromptFilter.builder()
-                .memberId(memberId)
-                .category(category)
-                .itemType(type)
-                .itemValue(value)
-                .build();
-        try {
-            recentMapper.insert(recentPromptFilter);
-        } catch (DataIntegrityViolationException ignore) {
-            // 유니크 제약 충돌은 무시 (이미 기록된 값)
+        // DB 에 저장 (중복 시 무시)
+        boolean exists = recentPromptFilterRepository.existsByMemberIdAndCategoryAndItemTypeAndItemValue(memberId, category, type, value);
+        if (!exists) {
+            RecentPromptFilter recentPromptFilter = RecentPromptFilter.builder()
+                    .memberId(memberId)
+                    .category(category)
+                    .itemType(type)
+                    .itemValue(value)
+                    .build();
+            recentPromptFilterRepository.save(recentPromptFilter);
         }
 
         // redis 캐시 (최근 10개 유지)
@@ -61,19 +64,23 @@ public class RecentPromptFilterServiceImpl implements RecentPromptFilterService 
     public List<String> getRecent(long memberId, String category, ItemType type, int limit) {
         String key = key(memberId, category, type);
 
-        // 최신순 상위 N
-        Set<String> z = redis.opsForZSet().reverseRange(key, 0, Math.max(0, limit - 1));
-        if (z != null && !z.isEmpty()) {
-            return new ArrayList<>(z);
+        // 1. 캐시 조회 - 최신순 상위 N
+        Set<String> cached = redis.opsForZSet().reverseRange(key, 0, Math.max(0, limit - 1));
+        if (cached != null && !cached.isEmpty()) {
+            return new ArrayList<>(cached);
         }
 
-        // 캐시 미스 → DB fallback (최근 10개)
-        List<String> fromDb = recentMapper.findTopNByUserCategoryType(memberId, category, type, limit);
-        for (int i = 0; i < fromDb.size(); i++) {
-            redis.opsForZSet().add(key, fromDb.get(i), System.currentTimeMillis() + i);
+        // 2. 캐시 미스 → DB fallback (최근 10개)
+        Pageable pageable = PageRequest.of(0, limit);
+        List<RecentPromptFilter> filters = recentPromptFilterRepository.findByMemberIdAndCategoryAndItemTypeOrderByCreatedAtDesc(memberId, category, type, pageable);
+        List<String> values = filters.stream().map(RecentPromptFilter::getItemValue).toList();
+
+        // 3. 캐시 갱신
+        for (int i = 0; i < values.size(); i++) {
+            redis.opsForZSet().add(key, values.get(i), System.currentTimeMillis() + i);
         }
         redis.expire(key, TTL);
-        return fromDb;
+        return values;
     }
 
     private String key(long userId, String category, ItemType type) {
