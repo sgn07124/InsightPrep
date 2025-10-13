@@ -12,6 +12,7 @@ import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.post.mapper.CommentMapper;
 import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
+import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.post.service.CommentService;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -29,6 +30,7 @@ public class CommentServiceImpl implements CommentService {
 
     private final SecurityUtil securityUtil;
     private final SharedPostMapper sharedPostMapper;
+    private final SharedPostRepository sharedPostRepository;
     private final CommentMapper commentMapper;
 
     @Override
@@ -36,10 +38,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentRes createComment(long postId, CreateDto req) {
         Member me = securityUtil.getAuthenticatedMember();
 
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) {
-            throw new PostException(PostErrorCode.POST_NOT_FOUND);
-        }
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
         Comment comment = Comment.builder()
                 .content(req.getContent())
@@ -62,8 +61,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void updateComment(long postId, long commentId, UpdateDto req) {
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
         CommentRow comment = commentMapper.findRowById(commentId);
         if (comment == null) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
@@ -84,8 +82,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void deleteComment(long postId, long commentId) {
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
         CommentRow comment = commentMapper.findRowById(commentId);
         if (comment == null) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
@@ -102,8 +99,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CommentListItem> getComments(long postId, int page, int size) {
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
         int safePage = Math.max(page, 1);
         int safeSize = Math.min(Math.max(size, 1), 50);

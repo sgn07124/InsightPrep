@@ -23,10 +23,12 @@ import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.post.mapper.CommentMapper;
 import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
+import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +47,9 @@ class CommentServiceImplTest {
 
     @Mock
     SharedPostMapper sharedPostMapper;
+
+    @Mock
+    SharedPostRepository sharedPostRepository;
 
     @Mock
     CommentMapper commentMapper;
@@ -80,7 +85,7 @@ class CommentServiceImplTest {
             SharedPost post = SharedPost.builder().id(postId).build();
 
             when(securityUtil.getAuthenticatedMember()).thenReturn(me);
-            when(sharedPostMapper.findById(postId)).thenReturn(post);
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(post));
             // insert 시 selectKey로 id가 세팅되는 것을 흉내
             doAnswer(inv -> {
                 Comment c = inv.getArgument(0);
@@ -103,7 +108,7 @@ class CommentServiceImplTest {
             assertThat(res.getPostId()).isEqualTo(postId);
 
             verify(securityUtil).getAuthenticatedMember();
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).insertComment(any(Comment.class));
         }
 
@@ -111,14 +116,14 @@ class CommentServiceImplTest {
         @DisplayName("실패 - 게시글 없음 → POST_NOT_FOUND")
         void create_post_not_found() {
             long postId = 99L;
-            when(sharedPostMapper.findById(postId)).thenReturn(null);
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     commentService.createComment(postId, new CreateDto("x"))
             ).isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verifyNoInteractions(commentMapper);
         }
     }
@@ -135,7 +140,7 @@ class CommentServiceImplTest {
             long commentId = 200L;
             long me = 1L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, postId, me, "old"));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
@@ -143,7 +148,7 @@ class CommentServiceImplTest {
 
             commentService.updateComment(postId, commentId, new UpdateDto("new content"));
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verify(securityUtil).getLoginMemberId();
             verify(commentMapper).updateContent(commentId, me, "new content");
@@ -154,14 +159,14 @@ class CommentServiceImplTest {
         void update_post_not_found() {
             long postId = 10L;
             long commentId = 200L;
-            when(sharedPostMapper.findById(postId)).thenReturn(null);
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     commentService.updateComment(postId, commentId, new UpdateDto("x"))
             ).isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verifyNoMoreInteractions(sharedPostMapper);
             verifyNoInteractions(commentMapper, securityUtil);
         }
@@ -171,7 +176,7 @@ class CommentServiceImplTest {
         void update_comment_not_found() {
             long postId = 10L;
             long commentId = 200L;
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId)).thenReturn(null);
 
             assertThatThrownBy(() ->
@@ -179,7 +184,7 @@ class CommentServiceImplTest {
             ).isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verifyNoMoreInteractions(commentMapper);
             verifyNoInteractions(securityUtil);
@@ -190,7 +195,7 @@ class CommentServiceImplTest {
         void update_wrong_postId() {
             long postId = 10L;
             long commentId = 200L;
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             // 댓글이 다른 postId에 속함
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, 999L, 1L, "x"));
@@ -200,7 +205,7 @@ class CommentServiceImplTest {
             ).isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verifyNoMoreInteractions(commentMapper);
             verifyNoInteractions(securityUtil);
@@ -214,7 +219,7 @@ class CommentServiceImplTest {
             long owner = 1L;
             long me = 2L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, postId, owner, "x"));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
@@ -224,7 +229,7 @@ class CommentServiceImplTest {
             ).isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_FORBIDDEN.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verify(securityUtil).getLoginMemberId();
             verifyNoMoreInteractions(commentMapper);
@@ -243,7 +248,7 @@ class CommentServiceImplTest {
             long commentId = 200L;
             long me = 1L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, postId, me, "x"));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
@@ -251,7 +256,7 @@ class CommentServiceImplTest {
 
             commentService.deleteComment(postId, commentId);
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verify(securityUtil).getLoginMemberId();
             verify(commentMapper).deleteByIdAndMember(commentId, me);
@@ -263,13 +268,13 @@ class CommentServiceImplTest {
             long postId = 10L;
             long commentId = 200L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(null);
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> commentService.deleteComment(postId, commentId))
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verifyNoInteractions(commentMapper, securityUtil);
         }
 
@@ -279,14 +284,14 @@ class CommentServiceImplTest {
             long postId = 10L;
             long commentId = 200L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId)).thenReturn(null);
 
             assertThatThrownBy(() -> commentService.deleteComment(postId, commentId))
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verifyNoMoreInteractions(commentMapper);
             verifyNoInteractions(securityUtil);
@@ -298,7 +303,7 @@ class CommentServiceImplTest {
             long postId = 10L;
             long commentId = 200L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, 999L, 1L, "x"));
 
@@ -306,7 +311,7 @@ class CommentServiceImplTest {
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verifyNoMoreInteractions(commentMapper);
             verifyNoInteractions(securityUtil);
@@ -320,7 +325,7 @@ class CommentServiceImplTest {
             long owner = 1L;
             long me = 2L;
 
-            when(sharedPostMapper.findById(postId)).thenReturn(SharedPost.builder().id(postId).build());
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.of(SharedPost.builder().id(postId).build()));
             when(commentMapper.findRowById(commentId))
                     .thenReturn(new CommentRow(commentId, postId, owner, "x"));
             when(securityUtil.getLoginMemberId()).thenReturn(me);
@@ -329,7 +334,7 @@ class CommentServiceImplTest {
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.COMMENT_FORBIDDEN.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verify(commentMapper).findRowById(commentId);
             verify(securityUtil).getLoginMemberId();
             verifyNoMoreInteractions(commentMapper);
@@ -344,13 +349,13 @@ class CommentServiceImplTest {
         @DisplayName("게시글이 없으면 POST_NOT_FOUND 발생")
         void post_not_found() {
             long postId = 999L;
-            when(sharedPostMapper.findById(postId)).thenReturn(null);
+            when(sharedPostRepository.findById(postId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> commentService.getComments(postId, 1, 10))
                     .isInstanceOf(PostException.class)
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
-            verify(sharedPostMapper).findById(postId);
+            verify(sharedPostRepository).findById(postId);
             verifyNoMoreInteractions(commentMapper, securityUtil);
         }
     }
@@ -362,7 +367,7 @@ class CommentServiceImplTest {
         @BeforeEach
         void setUp() {
             // 공통: 게시글 존재
-            when(sharedPostMapper.findById(1L)).thenReturn(stubPost(1L));
+            when(sharedPostRepository.findById(1L)).thenReturn(Optional.of(stubPost(1L)));
         }
 
         @Test
