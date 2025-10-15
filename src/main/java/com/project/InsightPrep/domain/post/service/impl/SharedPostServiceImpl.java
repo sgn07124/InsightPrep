@@ -2,14 +2,12 @@ package com.project.InsightPrep.domain.post.service.impl;
 
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.post.dto.PostRequest.Create;
-import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
 import com.project.InsightPrep.domain.post.entity.PostStatus;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
-import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.reqository.CommentRepository;
 import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.post.service.SharedPostService;
@@ -18,7 +16,6 @@ import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.util.List;
@@ -36,9 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SharedPostServiceImpl implements SharedPostService {
 
     private final SecurityUtil securityUtil;
-    private final SharedPostMapper sharedPostMapper;
     private final SharedPostRepository sharedPostRepository;
-    private final AnswerMapper answerMapper;
     private final AnswerRepository answerRepository;
     private final CommentRepository commentRepository;
 

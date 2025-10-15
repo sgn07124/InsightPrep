@@ -9,8 +9,6 @@ import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.event.AnswerSavedEvent;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.AnswerService;
@@ -29,9 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AnswerServiceImpl implements AnswerService {
 
     private final SecurityUtil securityUtil;
-    private final QuestionMapper questionMapper;
     private final QuestionRepository questionRepository;
-    private final AnswerMapper answerMapper;
     private final AnswerRepository answerRepository;
     private final FeedbackService feedbackService;
     private final ApplicationEventPublisher eventPublisher;

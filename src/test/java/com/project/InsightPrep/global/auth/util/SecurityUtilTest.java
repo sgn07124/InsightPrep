@@ -5,7 +5,6 @@ import static org.mockito.BDDMockito.given;
 
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
@@ -28,9 +27,6 @@ class SecurityUtilTest {
 
     @InjectMocks
     private SecurityUtil securityUtil;
-
-    @Mock
-    private AuthMapper authMapper;
 
     @Mock
     private AuthRepository authRepository;

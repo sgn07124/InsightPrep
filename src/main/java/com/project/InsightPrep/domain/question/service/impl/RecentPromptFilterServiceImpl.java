@@ -2,7 +2,6 @@ package com.project.InsightPrep.domain.question.service.impl;
 
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.RecentPromptFilter;
-import com.project.InsightPrep.domain.question.mapper.RecentPromptFilterMapper;
 import com.project.InsightPrep.domain.question.repository.RecentPromptFilterRepository;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import java.time.Duration;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -24,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class RecentPromptFilterServiceImpl implements RecentPromptFilterService {
 
     private final StringRedisTemplate redis;
-    private final RecentPromptFilterMapper recentMapper;
     private final RecentPromptFilterRepository recentPromptFilterRepository;
     private static final String KEY_FMT = "rp:%d:%s:%s";  // memberId, category, type
     public static final int MAX_SIZE = 10;

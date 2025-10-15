@@ -3,8 +3,6 @@ package com.project.InsightPrep.domain.auth.service;
 import com.project.InsightPrep.domain.auth.entity.PasswordVerification;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
-import com.project.InsightPrep.domain.auth.mapper.PasswordMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.auth.repository.PasswordRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
@@ -28,9 +26,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private static final int DEFAULT_ATTEMPTS = 5;
 
     private final EmailService emailService;
-    private final PasswordMapper passwordMapper;
     private final PasswordRepository passwordRepository;
-    private final AuthMapper authMapper;
     private final AuthRepository authRepository;
     private final SecurityUtil securityUtil;
 

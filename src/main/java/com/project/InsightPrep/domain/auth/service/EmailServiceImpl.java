@@ -3,8 +3,6 @@ package com.project.InsightPrep.domain.auth.service;
 import com.project.InsightPrep.domain.auth.entity.EmailVerification;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
-import com.project.InsightPrep.domain.auth.mapper.EmailMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.auth.repository.EmailRepository;
 import jakarta.mail.MessagingException;
@@ -27,9 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender emailSender;
-    private final AuthMapper authMapper;
     private final AuthRepository authRepository;
-    private final EmailMapper emailMapper;
     private final EmailRepository emailRepository;
 
     private static final long EXPIRE_MINUTES = 10;

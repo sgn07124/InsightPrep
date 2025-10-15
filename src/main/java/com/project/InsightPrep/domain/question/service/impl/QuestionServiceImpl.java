@@ -10,8 +10,6 @@ import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.QuestionService;
@@ -35,9 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class QuestionServiceImpl implements QuestionService {
 
     private final GptService gptService;
-    private final QuestionMapper questionMapper;
     private final QuestionRepository questionRepository;
-    private final AnswerMapper answerMapper;
     private final AnswerRepository answerRepository;
     private final RecentPromptFilterService recentPromptFilterService;
     private final SecurityUtil securityUtil;

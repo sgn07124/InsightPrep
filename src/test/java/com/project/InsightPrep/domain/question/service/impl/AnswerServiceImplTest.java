@@ -4,10 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -24,8 +21,6 @@ import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.event.AnswerSavedEvent;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -53,13 +48,7 @@ class AnswerServiceImplTest {
     private SecurityUtil securityUtil;
 
     @Mock
-    private QuestionMapper questionMapper;
-
-    @Mock
     private QuestionRepository questionRepository;
-
-    @Mock
-    private AnswerMapper answerMapper;
 
     @Mock
     private AnswerRepository answerRepository;
@@ -128,7 +117,7 @@ class AnswerServiceImplTest {
         // 반환 DTO 검증 (서비스가 DTO를 반환하도록 구현되어 있다는 가정)
         assertThat(res).isNotNull();
         assertThat(res.getAnswerId()).isEqualTo(100L);
-        verifyNoMoreInteractions(securityUtil, questionRepository, answerMapper, feedbackService);
+        verifyNoMoreInteractions(securityUtil, questionRepository, answerRepository, feedbackService);
     }
 
     @Test

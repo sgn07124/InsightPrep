@@ -1,13 +1,11 @@
 package com.project.InsightPrep.domain.question.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.RecentPromptFilter;
-import com.project.InsightPrep.domain.question.mapper.RecentPromptFilterMapper;
 import com.project.InsightPrep.domain.question.repository.RecentPromptFilterRepository;
 import java.time.Duration;
 import java.util.*;
@@ -18,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -26,10 +23,12 @@ import org.springframework.data.redis.core.ZSetOperations;
 @ExtendWith(MockitoExtension.class)
 class RecentPromptFilterServiceImplTest {
 
-    @Mock StringRedisTemplate redis;
-    @Mock RecentPromptFilterMapper recentMapper;
+    @Mock
+    StringRedisTemplate redis;
+
     @Mock
     RecentPromptFilterRepository recentPromptFilterRepository;
+
     @Mock ZSetOperations<String, String> zset;
 
     @InjectMocks RecentPromptFilterServiceImpl service;

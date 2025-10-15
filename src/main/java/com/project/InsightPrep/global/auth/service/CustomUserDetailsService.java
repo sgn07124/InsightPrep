@@ -1,6 +1,5 @@
 package com.project.InsightPrep.global.auth.service;
 
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final AuthMapper authMapper;
     private final AuthRepository authRepository;
 
     @Override

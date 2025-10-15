@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -22,8 +21,6 @@ import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
@@ -48,13 +45,7 @@ class QuestionServiceImplTest {
     private GptService gptService;
 
     @Mock
-    private QuestionMapper questionMapper;
-
-    @Mock
     private QuestionRepository questionRepository;
-
-    @Mock
-    private AnswerMapper answerMapper;
 
     @Mock
     private AnswerRepository answerRepository;
@@ -122,7 +113,7 @@ class QuestionServiceImplTest {
         inOrder.verify(recentPromptFilterService).record(memberId, category, ItemType.TOPIC, "프로세스 vs 스레드");
         inOrder.verify(recentPromptFilterService).record(memberId, category, ItemType.KEYWORD, "thread");
 
-        verifyNoMoreInteractions(recentPromptFilterService, gptService, questionMapper, securityUtil);
+        verifyNoMoreInteractions(recentPromptFilterService, gptService, questionRepository, securityUtil);
     }
 
     @Test

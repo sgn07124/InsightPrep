@@ -14,8 +14,6 @@ import static org.mockito.Mockito.when;
 import com.project.InsightPrep.domain.auth.entity.EmailVerification;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
-import com.project.InsightPrep.domain.auth.mapper.EmailMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.auth.repository.EmailRepository;
 import jakarta.mail.MessagingException;
@@ -41,13 +39,7 @@ class EmailServiceImplTest {
     private JavaMailSender emailSender;
 
     @Mock
-    private AuthMapper authMapper;
-
-    @Mock
     private AuthRepository authRepository;
-
-    @Mock
-    private EmailMapper emailMapper;
 
     @Mock
     private EmailRepository emailRepository;

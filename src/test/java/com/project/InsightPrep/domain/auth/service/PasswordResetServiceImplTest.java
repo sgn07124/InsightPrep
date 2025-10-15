@@ -3,8 +3,6 @@ package com.project.InsightPrep.domain.auth.service;
 import com.project.InsightPrep.domain.auth.entity.PasswordVerification;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
-import com.project.InsightPrep.domain.auth.mapper.PasswordMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.auth.repository.PasswordRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
@@ -33,13 +31,15 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PasswordResetServiceImplTest {
 
-    @Mock EmailService emailService;
-    @Mock PasswordMapper passwordMapper;
+    @Mock
+    EmailService emailService;
+
     @Mock
     PasswordRepository passwordRepository;
-    @Mock AuthMapper authMapper;
+
     @Mock
     AuthRepository authRepository;
+
     @Mock
     SecurityUtil securityUtil;
 
@@ -82,7 +82,7 @@ class PasswordResetServiceImplTest {
         service.requestOtp(EMAIL);
 
         verifyNoInteractions(emailService);
-        verifyNoInteractions(passwordMapper);
+        verifyNoInteractions(passwordRepository);
     }
 
     @Test

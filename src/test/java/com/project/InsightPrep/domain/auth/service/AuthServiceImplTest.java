@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.signupDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
 import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
@@ -30,9 +29,6 @@ class AuthServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private AuthMapper authMapper;
 
     @Mock
     private AuthRepository authRepository;

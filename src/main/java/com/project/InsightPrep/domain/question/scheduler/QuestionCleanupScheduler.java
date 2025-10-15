@@ -1,7 +1,6 @@
 package com.project.InsightPrep.domain.question.scheduler;
 
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
 import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;

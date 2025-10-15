@@ -17,13 +17,10 @@ import com.project.InsightPrep.domain.post.dto.CommentRequest.CreateDto;
 import com.project.InsightPrep.domain.post.dto.CommentRequest.UpdateDto;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
-import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRow;
 import com.project.InsightPrep.domain.post.entity.Comment;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
-import com.project.InsightPrep.domain.post.mapper.CommentMapper;
-import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.reqository.CommentRepository;
 import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
@@ -51,13 +48,7 @@ class CommentServiceImplTest {
     SecurityUtil securityUtil;
 
     @Mock
-    SharedPostMapper sharedPostMapper;
-
-    @Mock
     SharedPostRepository sharedPostRepository;
-
-    @Mock
-    CommentMapper commentMapper;
 
     @Mock
     CommentRepository commentRepository;
@@ -132,7 +123,7 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verifyNoInteractions(commentMapper);
+            verifyNoInteractions(commentRepository);
         }
     }
 
@@ -186,8 +177,8 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verifyNoMoreInteractions(sharedPostMapper);
-            verifyNoInteractions(commentMapper, securityUtil);
+            verifyNoMoreInteractions(sharedPostRepository);
+            verifyNoInteractions(commentRepository, securityUtil);
         }
 
         @Test
@@ -320,7 +311,7 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verifyNoInteractions(commentMapper, securityUtil);
+            verifyNoInteractions(commentRepository, securityUtil);
         }
 
         @Test
@@ -418,7 +409,7 @@ class CommentServiceImplTest {
                     .hasMessageContaining(PostErrorCode.POST_NOT_FOUND.getMessage());
 
             verify(sharedPostRepository).findById(postId);
-            verifyNoMoreInteractions(commentMapper, securityUtil);
+            verifyNoMoreInteractions(commentRepository, securityUtil);
         }
     }
 

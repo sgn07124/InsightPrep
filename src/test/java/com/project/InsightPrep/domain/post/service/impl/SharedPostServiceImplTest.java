@@ -2,11 +2,8 @@ package com.project.InsightPrep.domain.post.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,24 +11,20 @@ import static org.mockito.Mockito.verify;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.repository.MemberRepository;
 import com.project.InsightPrep.domain.post.dto.PostRequest.Create;
-import com.project.InsightPrep.domain.post.dto.PostRequest.PostOwnerStatusDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostDetailDto;
 import com.project.InsightPrep.domain.post.dto.PostResponse.PostListItemDto;
 import com.project.InsightPrep.domain.post.entity.PostStatus;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
-import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.reqository.CommentRepository;
 import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
 import com.project.InsightPrep.domain.question.repository.AnswerRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -51,13 +44,7 @@ class SharedPostServiceImplTest {
     SecurityUtil securityUtil;
 
     @Mock
-    SharedPostMapper sharedPostMapper;
-
-    @Mock
     SharedPostRepository sharedPostRepository;
-
-    @Mock
-    AnswerMapper answerMapper;
 
     @Mock
     AnswerRepository answerRepository;

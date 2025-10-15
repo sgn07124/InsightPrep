@@ -5,19 +5,15 @@ import com.project.InsightPrep.domain.post.dto.CommentRequest.CreateDto;
 import com.project.InsightPrep.domain.post.dto.CommentRequest.UpdateDto;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
-import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRow;
 import com.project.InsightPrep.domain.post.entity.Comment;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
-import com.project.InsightPrep.domain.post.mapper.CommentMapper;
-import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
 import com.project.InsightPrep.domain.post.reqository.CommentRepository;
 import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.post.service.CommentService;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentServiceImpl implements CommentService {
 
     private final SecurityUtil securityUtil;
-    private final SharedPostMapper sharedPostMapper;
     private final SharedPostRepository sharedPostRepository;
-    private final CommentMapper commentMapper;
     private final CommentRepository commentRepository;
 
     @Override
