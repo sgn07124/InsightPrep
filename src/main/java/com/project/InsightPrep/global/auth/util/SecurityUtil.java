@@ -2,7 +2,7 @@ package com.project.InsightPrep.global.auth.util;
 
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
 import com.project.InsightPrep.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @RequiredArgsConstructor
 public class SecurityUtil {
 
-    private final AuthMapper authMapper;
+    private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
 
     public Long getLoginMemberId() {
@@ -36,7 +36,7 @@ public class SecurityUtil {
 
     public Member getAuthenticatedMember() {
         Long memberId = getLoginMemberId();
-        return authMapper.findById(memberId)
+        return authRepository.findById(memberId)
                 .orElseThrow(() -> new AuthException(AuthErrorCode.MEMBER_NOT_FOUND));
     }
 

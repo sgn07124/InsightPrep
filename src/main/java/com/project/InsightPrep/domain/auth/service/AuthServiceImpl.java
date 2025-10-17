@@ -6,7 +6,7 @@ import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResult
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.MeDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
 import com.project.InsightPrep.global.auth.domain.CustomUserDetails;
@@ -31,7 +31,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
-    private final AuthMapper authMapper;
+    private final AuthRepository authRepository;
     private final EmailService emailService;
     private final SecurityUtil securityUtil;
 
@@ -47,13 +47,14 @@ public class AuthServiceImpl implements AuthService {
                 .role(Role.USER)
                 .build();
 
-        authMapper.insertMember(member);
+        //authMapper.insertMember(member);
+        authRepository.save(member);
     }
 
     @Override
     @Transactional
     public LoginResultDto login(LoginDto dto) {
-        Member member = authMapper.findByEmail(dto.getEmail()).orElseThrow(() -> new AuthException(AuthErrorCode.LOGIN_FAIL));
+        Member member = authRepository.findByEmail(dto.getEmail()).orElseThrow(() -> new AuthException(AuthErrorCode.LOGIN_FAIL));
 
         if (!passwordEncoder.matches(dto.getPassword(), member.getPassword())) {
             throw new AuthException(AuthErrorCode.LOGIN_FAIL);

@@ -15,7 +15,7 @@ public interface PasswordMapper {
                            @Param("expiresAt") LocalDateTime expiresAt,
                            @Param("createdAt") LocalDateTime createdAt);
 
-    PasswordVerification findByEmail(@Param("email") String email);
+    PasswordVerification findByEmail(@Param("email") String email);  //
 
     int updateAttempts(@Param("email") String email,
                        @Param("attemptsLeft") int attemptsLeft);
@@ -27,7 +27,7 @@ public interface PasswordMapper {
                          @Param("resetUsed") boolean resetUsed,
                          @Param("resetExpiresAt") LocalDateTime resetExpiresAt);
 
-    PasswordVerification findByResetToken(@Param("resetToken") String resetToken);
+    PasswordVerification findByResetToken(@Param("resetToken") String resetToken);  //
 
     int markResetTokenUsed(@Param("resetToken") String resetToken);
 }

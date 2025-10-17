@@ -3,7 +3,7 @@ package com.project.InsightPrep.global.auth.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
 import java.util.Optional;
@@ -20,7 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 class CustomUserDetailsServiceTest {
 
     @Mock
-    private AuthMapper authMapper;
+    private AuthRepository authRepository;
 
     @InjectMocks
     private CustomUserDetailsService customUserDetailsService;
@@ -38,7 +38,7 @@ class CustomUserDetailsServiceTest {
                 .role(Role.USER)
                 .build();
 
-        given(authMapper.findByEmail(email)).willReturn(Optional.of(member));
+        given(authRepository.findByEmail(email)).willReturn(Optional.of(member));
 
         // when
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
@@ -56,7 +56,7 @@ class CustomUserDetailsServiceTest {
     void loadUserByUsername_fail_userNotFound() {
         // given
         String email = "nonexistent@example.com";
-        given(authMapper.findByEmail(email)).willReturn(Optional.empty());
+        given(authRepository.findByEmail(email)).willReturn(Optional.empty());
 
         // when & then
         assertThrows(UsernameNotFoundException.class, () -> {

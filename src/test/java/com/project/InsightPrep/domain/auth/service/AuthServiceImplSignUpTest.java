@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.LoginDto;
 import com.project.InsightPrep.domain.auth.dto.response.AuthResponse.LoginResultDto;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import com.project.InsightPrep.domain.member.entity.Role;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,7 +36,7 @@ public class AuthServiceImplSignUpTest {
     private AuthServiceImpl authService;
 
     @Mock
-    private AuthMapper authMapper;
+    private AuthRepository authRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -64,7 +64,7 @@ public class AuthServiceImplSignUpTest {
         LoginDto dto = new LoginDto("test@example.com", "Password123!", false);
         Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER, 10);
 
-        when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
+        when(authRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
         when(passwordEncoder.matches(dto.getPassword(), member.getPassword())).thenReturn(true);
 
         // when
@@ -81,7 +81,7 @@ public class AuthServiceImplSignUpTest {
     void login_email_not_exist() {
         // given
         LoginDto dto = new LoginDto("test@example.com", "Password123!", false);
-        when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
+        when(authRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
 
         // expect
         assertThrows(AuthException.class, () -> authService.login(dto));
@@ -94,7 +94,7 @@ public class AuthServiceImplSignUpTest {
         LoginDto dto = new LoginDto("test@example.com", "Password123", false);
         Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER, 10);
 
-        when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
+        when(authRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
         when(passwordEncoder.matches(dto.getPassword(), member.getPassword())).thenReturn(false);
 
         // expect
@@ -108,7 +108,7 @@ public class AuthServiceImplSignUpTest {
         LoginDto dto = new LoginDto("test@example.com", "Password123!", true);
         Member member = new Member(1L, "test@example.com", "Password123!","nickname", Role.USER, 10);
 
-        when(authMapper.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
+        when(authRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(member));
         when(passwordEncoder.matches(dto.getPassword(), member.getPassword())).thenReturn(true);
 
         // when

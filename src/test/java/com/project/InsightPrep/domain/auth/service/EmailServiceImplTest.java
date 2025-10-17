@@ -14,8 +14,8 @@ import static org.mockito.Mockito.when;
 import com.project.InsightPrep.domain.auth.entity.EmailVerification;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
-import com.project.InsightPrep.domain.auth.mapper.EmailMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
+import com.project.InsightPrep.domain.auth.repository.EmailRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.lang.reflect.Field;
@@ -39,10 +39,10 @@ class EmailServiceImplTest {
     private JavaMailSender emailSender;
 
     @Mock
-    private AuthMapper authMapper;
+    private AuthRepository authRepository;
 
     @Mock
-    private EmailMapper emailMapper;
+    private EmailRepository emailRepository;
 
     @Mock
     private MimeMessage mimeMessage;
@@ -98,7 +98,7 @@ class EmailServiceImplTest {
     @DisplayName("이메일 중복 - 중복일 경우 예외 발생")
     void existEmail_Duplicate_ThrowsException() {
         String email = "test@example.com";
-        given(authMapper.existEmail(email)).willReturn(true);
+        given(authRepository.existsByEmail(email)).willReturn(true);
 
         assertThrows(AuthException.class, () -> emailService.existEmail(email));
     }
@@ -112,7 +112,7 @@ class EmailServiceImplTest {
                 .email(email)
                 .expiresTime(LocalDateTime.now().minusMinutes(1))
                 .build();
-        given(emailMapper.findByEmail(email)).willReturn(expired);
+        given(emailRepository.findByEmail(email)).willReturn(Optional.of(expired));
 
         // 필요 mock 설정
         MimeMessage mimeMessage = mock(MimeMessage.class);
@@ -128,7 +128,7 @@ class EmailServiceImplTest {
         emailService.sendCodeToEmail(email);
 
         // then
-        verify(emailMapper).deleteByEmail(email);
+        verify(emailRepository).deleteByEmail(email);
     }
 
     @Test
@@ -139,7 +139,7 @@ class EmailServiceImplTest {
                 .email(email)
                 .expiresTime(LocalDateTime.now().plusMinutes(5))
                 .build();
-        given(emailMapper.findByEmail(email)).willReturn(notExpired);
+        given(emailRepository.findByEmail(email)).willReturn(Optional.of(notExpired));
 
         assertThrows(AuthException.class, () -> emailService.sendCodeToEmail(email));
     }
@@ -154,12 +154,12 @@ class EmailServiceImplTest {
                 .code(code)
                 .expiresTime(LocalDateTime.now().plusMinutes(1))
                 .build();
-        given(emailMapper.findByEmailAndCode(email, code)).willReturn(Optional.of(verification));
+        given(emailRepository.findByEmailAndCode(email, code)).willReturn(Optional.of(verification));
 
         boolean result = emailService.verifyCode(email, code);
 
         assertTrue(result);
-        verify(emailMapper).updateVerified(email, code);
+        verify(emailRepository).updateVerified(email, code);
     }
 
     @Test
@@ -172,7 +172,7 @@ class EmailServiceImplTest {
                 .code(code)
                 .expiresTime(LocalDateTime.now().minusMinutes(1))
                 .build();
-        given(emailMapper.findByEmailAndCode(email, code)).willReturn(Optional.of(expired));
+        given(emailRepository.findByEmailAndCode(email, code)).willReturn(Optional.of(expired));
 
         assertThrows(AuthException.class, () -> emailService.verifyCode(email, code));
     }
@@ -180,7 +180,7 @@ class EmailServiceImplTest {
     @Test
     @DisplayName("인증 코드 불일치 - 예외 발생")
     void verifyCode_NotFound_ThrowsException() {
-        given(emailMapper.findByEmailAndCode(anyString(), anyString())).willReturn(Optional.empty());
+        given(emailRepository.findByEmailAndCode(anyString(), anyString())).willReturn(Optional.empty());
 
         assertThrows(AuthException.class, () -> emailService.verifyCode("test@example.com", "ABC123"));
     }
@@ -188,7 +188,7 @@ class EmailServiceImplTest {
     @Test
     @DisplayName("인증된 이메일 검증 - 실패 시 예외 발생")
     void validateEmailVerified_Invalid_ThrowsException() {
-        given(emailMapper.findByEmail(anyString())).willReturn(null);
+        given(emailRepository.findByEmail(anyString())).willReturn(Optional.empty());
 
         assertThrows(AuthException.class, () -> emailService.validateEmailVerified("test@example.com"));
     }
@@ -200,7 +200,7 @@ class EmailServiceImplTest {
         emailService.deleteExpiredVerificationCodes();
 
         // then
-        verify(emailMapper, times(1)).deleteByExpiresTimeBefore(any(LocalDateTime.class));
+        verify(emailRepository, times(1)).deleteByExpiresTimeBefore(any(LocalDateTime.class));
     }
 
     @Test
@@ -210,7 +210,7 @@ class EmailServiceImplTest {
         String email = "user@test.com";
         EmailVerification notVerified = new EmailVerification(1L, "test@example.com", "XWL9WS", false, LocalDateTime.now().plusMinutes(5));
 
-        when(emailMapper.findByEmail(email)).thenReturn(notVerified);
+        when(emailRepository.findByEmail(email)).thenReturn(Optional.of(notVerified));
 
         // when & then
         AuthException exception = assertThrows(AuthException.class, () -> {

@@ -5,20 +5,22 @@ import com.project.InsightPrep.domain.post.dto.CommentRequest.CreateDto;
 import com.project.InsightPrep.domain.post.dto.CommentRequest.UpdateDto;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentListItem;
 import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRes;
-import com.project.InsightPrep.domain.post.dto.CommentResponse.CommentRow;
 import com.project.InsightPrep.domain.post.entity.Comment;
 import com.project.InsightPrep.domain.post.entity.SharedPost;
 import com.project.InsightPrep.domain.post.exception.PostErrorCode;
 import com.project.InsightPrep.domain.post.exception.PostException;
-import com.project.InsightPrep.domain.post.mapper.CommentMapper;
-import com.project.InsightPrep.domain.post.mapper.SharedPostMapper;
+import com.project.InsightPrep.domain.post.reqository.CommentRepository;
+import com.project.InsightPrep.domain.post.reqository.SharedPostRepository;
 import com.project.InsightPrep.domain.post.service.CommentService;
 import com.project.InsightPrep.domain.question.dto.response.PageResponse;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,18 +30,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentServiceImpl implements CommentService {
 
     private final SecurityUtil securityUtil;
-    private final SharedPostMapper sharedPostMapper;
-    private final CommentMapper commentMapper;
+    private final SharedPostRepository sharedPostRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     @Transactional
     public CommentRes createComment(long postId, CreateDto req) {
         Member me = securityUtil.getAuthenticatedMember();
 
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) {
-            throw new PostException(PostErrorCode.POST_NOT_FOUND);
-        }
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
         Comment comment = Comment.builder()
                 .content(req.getContent())
@@ -47,7 +46,7 @@ public class CommentServiceImpl implements CommentService {
                 .sharedPost(post)
                 .build();
 
-        commentMapper.insertComment(comment);
+        commentRepository.save(comment);
 
         return CommentRes.builder()
                 .commentId(comment.getId())
@@ -55,77 +54,68 @@ public class CommentServiceImpl implements CommentService {
                 .authorId(me.getId())
                 .authorNickname(me.getNickname())
                 .postId(postId)
-                .createdAt(LocalDateTime.now())
+                .createdAt(comment.getCreatedAt())
                 .build();
     }
 
     @Override
     @Transactional
     public void updateComment(long postId, long commentId, UpdateDto req) {
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
-
-        CommentRow comment = commentMapper.findRowById(commentId);
-        if (comment == null) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new PostException(PostErrorCode.COMMENT_NOT_FOUND));
 
         // postId 매칭 검증
-        if (comment.getPostId() != postId) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+        if (!comment.getSharedPost().getId().equals(postId)) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
 
         // 본인이 작성한 댓글 검증
         long me = securityUtil.getLoginMemberId();
-        if (comment.getMemberId() != me) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+        if (!comment.getMember().getId().equals(me)) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
 
-        int n = commentMapper.updateContent(commentId, me, req.getContent());
-        if (n == 0) {
-            throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
-        }
+        comment.updateContent(req.getContent());
     }
 
     @Override
     @Transactional
     public void deleteComment(long postId, long commentId) {
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new PostException(PostErrorCode.COMMENT_NOT_FOUND));
 
-        CommentRow comment = commentMapper.findRowById(commentId);
-        if (comment == null) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
-        if (comment.getPostId() != postId) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
+        // postId 매칭 검증
+        if (!comment.getSharedPost().getId().equals(postId)) throw new PostException(PostErrorCode.COMMENT_NOT_FOUND);
 
+        // 본인 작성자 검증
         long me = securityUtil.getLoginMemberId();
-        if (comment.getMemberId() != me) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
-        int n = commentMapper.deleteByIdAndMember(commentId, me);
-        if (n == 0) {
-            throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
-        }
+        if (!comment.getMember().getId().equals(me)) throw new PostException(PostErrorCode.COMMENT_FORBIDDEN);
+
+        commentRepository.delete(comment);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CommentListItem> getComments(long postId, int page, int size) {
-        SharedPost post = sharedPostMapper.findById(postId);
-        if (post == null) throw new PostException(PostErrorCode.POST_NOT_FOUND);
+        SharedPost post = sharedPostRepository.findById(postId).orElseThrow(() -> new PostException(PostErrorCode.POST_NOT_FOUND));
 
-        int safePage = Math.max(page, 1);
+        int safePage = Math.max(page, 1) - 1; // Pageable은 0-based
         int safeSize = Math.min(Math.max(size, 1), 50);
-        int offset = (safePage - 1) * safeSize;
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id")));
 
-        List<CommentListItem> raw = commentMapper.findByPostPaged(postId, safeSize, offset);
-        long total = commentMapper.countByPost(postId);
+        Page<Comment> pageResult = commentRepository.findBySharedPost_IdOrderByCreatedAtAscIdAsc(postId, pageable);
+        long total = commentRepository.countBySharedPost_Id(postId);
 
         // 현재 로그인한 사용자 id
         long me = securityUtil.getLoginMemberId();
 
-        List<CommentListItem> content = raw.stream()
+        List<CommentListItem> content = pageResult.getContent().stream()
                 .map(c -> CommentListItem.builder()
-                        .commentId(c.getCommentId())
-                        .authorId(c.getAuthorId())
-                        .authorNickname(c.getAuthorNickname())
+                        .commentId(c.getId())
+                        .authorId(c.getMember().getId())
+                        .authorNickname(c.getMember().getNickname())
                         .content(c.getContent())
                         .createdAt(c.getCreatedAt())
-                        .mine(c.getAuthorId() != null && c.getAuthorId() == me)
+                        .mine(c.getMember().getId().equals(me))
                         .build())
                 .toList();
 
-        return PageResponse.of(content, safePage, safeSize, total);
+        return PageResponse.of(content, safePage + 1, safeSize, total);
     }
 }

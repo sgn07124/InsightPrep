@@ -5,11 +5,13 @@ import com.project.InsightPrep.domain.question.dto.response.QuestionResponse;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.GptQuestion;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionDto;
 import com.project.InsightPrep.domain.question.dto.response.QuestionResponse.QuestionsDto;
+import com.project.InsightPrep.domain.question.entity.Answer;
+import com.project.InsightPrep.domain.question.entity.AnswerFeedback;
 import com.project.InsightPrep.domain.question.entity.AnswerStatus;
 import com.project.InsightPrep.domain.question.entity.ItemType;
 import com.project.InsightPrep.domain.question.entity.Question;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
+import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.domain.question.service.QuestionService;
 import com.project.InsightPrep.domain.question.service.RecentPromptFilterService;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
@@ -20,6 +22,8 @@ import com.project.InsightPrep.global.gpt.service.GptService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,8 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class QuestionServiceImpl implements QuestionService {
 
     private final GptService gptService;
-    private final QuestionMapper questionMapper;
-    private final AnswerMapper answerMapper;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
     private final RecentPromptFilterService recentPromptFilterService;
     private final SecurityUtil securityUtil;
 
@@ -57,7 +61,7 @@ public class QuestionServiceImpl implements QuestionService {
                 .status(AnswerStatus.WAITING)
                 .build();
 
-        questionMapper.insertQuestion(question);
+        questionRepository.save(question);
 
         // 5) 기록 (Redis + DB) - 응답에 topic/keyword가 비어있을 수도 있으므로 방어
         if (isNotBlank(gptQuestion.getTopic())) {
@@ -82,11 +86,29 @@ public class QuestionServiceImpl implements QuestionService {
 
         int safePage = Math.max(page, 1);
         int safeSize = Math.min(Math.max(size, 1), 50);
-        int offset = (safePage - 1) * safeSize;
 
-        List<QuestionsDto> content = answerMapper.findQuestionsWithFeedbackPaged(memberId, safeSize, offset);
-        long total = answerMapper.countQuestionsWithFeedback(memberId);
-        return PageResponse.of(content, safePage, safeSize, total);
+        Pageable pageable = PageRequest.of(safePage - 1, safeSize);
+
+        List<Answer> answers = answerRepository.findAllWithQuestionAndFeedbackByMemberId(memberId, pageable);
+
+        List<QuestionsDto> dtos = answers.stream()
+                .map(a -> {
+                    AnswerFeedback f = a.getFeedback(); // fetch join으로 이미 로드됨
+                    return QuestionResponse.QuestionsDto.builder()
+                            .questionId(a.getQuestion().getId())
+                            .category(a.getQuestion().getCategory())
+                            .question(a.getQuestion().getContent())
+                            .answerId(a.getId())
+                            .answer(a.getContent())
+                            .feedbackId(f.getId())
+                            .score(f.getScore())
+                            .improvement(f.getImprovement())
+                            .modelAnswer(f.getModelAnswer())
+                            .build();
+                })
+                .toList();
+
+        return PageResponse.of(dtos, safePage, safeSize, dtos.size());
     }
 
     private boolean hasAny(List<String> a, List<String> b) {

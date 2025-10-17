@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import com.project.InsightPrep.domain.auth.dto.request.AuthRequest.signupDto;
 import com.project.InsightPrep.domain.auth.exception.AuthErrorCode;
 import com.project.InsightPrep.domain.auth.exception.AuthException;
-import com.project.InsightPrep.domain.auth.mapper.AuthMapper;
+import com.project.InsightPrep.domain.auth.repository.AuthRepository;
 import com.project.InsightPrep.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class AuthServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private AuthMapper authMapper;
+    private AuthRepository authRepository;
 
     @Mock
     private EmailService emailService;
@@ -55,7 +55,7 @@ class AuthServiceImplTest {
         // then
         verify(emailService).existEmail(dto.getEmail());
         verify(emailService).validateEmailVerified(dto.getEmail());
-        verify(authMapper).insertMember(any(Member.class));
+        verify(authRepository).save(any(Member.class));
     }
 
     @Test
@@ -75,7 +75,7 @@ class AuthServiceImplTest {
         // when & then
         assertThrows(AuthException.class, () -> authService.signup(dto));
 
-        verify(authMapper, never()).insertMember(any());
+        verify(authRepository, never()).save(any());
     }
 
     @Test
@@ -97,7 +97,7 @@ class AuthServiceImplTest {
 
         // when & then
         assertThrows(AuthException.class, () -> authService.signup(dto));
-        verify(authMapper, never()).insertMember(any());
+        verify(authRepository, never()).save(any());
     }
 
 }

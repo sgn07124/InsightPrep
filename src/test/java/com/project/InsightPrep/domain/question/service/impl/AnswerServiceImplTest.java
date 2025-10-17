@@ -4,10 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,10 +21,11 @@ import com.project.InsightPrep.domain.question.entity.Question;
 import com.project.InsightPrep.domain.question.event.AnswerSavedEvent;
 import com.project.InsightPrep.domain.question.exception.QuestionErrorCode;
 import com.project.InsightPrep.domain.question.exception.QuestionException;
-import com.project.InsightPrep.domain.question.mapper.AnswerMapper;
-import com.project.InsightPrep.domain.question.mapper.QuestionMapper;
+import com.project.InsightPrep.domain.question.repository.AnswerRepository;
+import com.project.InsightPrep.domain.question.repository.QuestionRepository;
 import com.project.InsightPrep.global.auth.util.SecurityUtil;
 import java.lang.reflect.Field;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +36,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 @ExtendWith(MockitoExtension.class)
 class AnswerServiceImplTest {
@@ -48,10 +48,10 @@ class AnswerServiceImplTest {
     private SecurityUtil securityUtil;
 
     @Mock
-    private QuestionMapper questionMapper;
+    private QuestionRepository questionRepository;
 
     @Mock
-    private AnswerMapper answerMapper;
+    private AnswerRepository answerRepository;
 
     @Mock
     private FeedbackServiceImpl feedbackService;
@@ -81,9 +81,8 @@ class AnswerServiceImplTest {
         AnswerDto dto = new AnswerDto("테스트 답변입니다.");
 
         when(securityUtil.getAuthenticatedMember()).thenReturn(mockMember);
-        when(questionMapper.findById(questionId)).thenReturn(mockQuestion);
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(mockQuestion));
 
-        doNothing().when(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
         // insertAnswer 호출 시, DB가 생성한 PK가 들어간 것처럼 id 세팅을 시뮬레이션
         doAnswer(invocation -> {
             Answer arg = invocation.getArgument(0);
@@ -91,16 +90,17 @@ class AnswerServiceImplTest {
             idField.setAccessible(true);
             idField.set(arg, 100L);
             return null;
-        }).when(answerMapper).insertAnswer(any(Answer.class));
+        }).when(answerRepository).save(any(Answer.class));
 
         // when
         AnswerResponse.AnswerDto res = answerService.saveAnswer(dto, questionId);
 
         // then
         verify(securityUtil).getAuthenticatedMember();
-        verify(questionMapper).findById(questionId);
-        verify(questionMapper).updateStatus(eq(questionId), eq(AnswerStatus.ANSWERED.name()));
-        verify(answerMapper).insertAnswer(any(Answer.class));
+        verify(questionRepository).findById(questionId);
+        verify(answerRepository).save(any(Answer.class));
+
+        assertThat(mockQuestion.getStatus()).isEqualTo(AnswerStatus.ANSWERED);
 
         // 이벤트 객체 캡처
         ArgumentCaptor<AnswerSavedEvent> eventCaptor = ArgumentCaptor.forClass(AnswerSavedEvent.class);
@@ -117,7 +117,7 @@ class AnswerServiceImplTest {
         // 반환 DTO 검증 (서비스가 DTO를 반환하도록 구현되어 있다는 가정)
         assertThat(res).isNotNull();
         assertThat(res.getAnswerId()).isEqualTo(100L);
-        verifyNoMoreInteractions(securityUtil, questionMapper, answerMapper, feedbackService);
+        verifyNoMoreInteractions(securityUtil, questionRepository, answerRepository, feedbackService);
     }
 
     @Test
@@ -128,7 +128,7 @@ class AnswerServiceImplTest {
         long answerId = 100L;
 
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
-        when(answerMapper.findQuestionIdOfMyAnswer(answerId, memberId)).thenReturn(null);
+        when(answerRepository.findById(answerId)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> answerService.deleteAnswer(answerId))
@@ -136,10 +136,11 @@ class AnswerServiceImplTest {
                 .matches(ex -> ((QuestionException) ex).getErrorCode() == QuestionErrorCode.QUESTION_NOT_FOUND);
 
         verify(securityUtil).getLoginMemberId();
-        verify(answerMapper).findQuestionIdOfMyAnswer(answerId, memberId);
-        verify(answerMapper, never()).deleteMyAnswerById(anyLong(), anyLong());
-        verify(answerMapper, never()).resetQuestionStatusIfNoAnswers(anyLong(), anyString());
-        verifyNoMoreInteractions(answerMapper, securityUtil);
+        verify(answerRepository).findById(answerId);
+        verify(answerRepository, never()).delete(any());
+        verify(questionRepository, never()).findById(anyLong());
+        verify(questionRepository, never()).save(any());
+        verifyNoMoreInteractions(answerRepository, questionRepository, securityUtil);
     }
 
     @Test
@@ -150,9 +151,14 @@ class AnswerServiceImplTest {
         long answerId = 100L;
         long questionId = 10L;
 
+        Member mockMember = Member.builder().id(memberId).build();
+        Question mockQuestion = Question.builder().id(questionId).category("OS").content("Q").build();
+        Answer mockAnswer = Answer.builder().id(answerId).member(mockMember).question(mockQuestion).content("A").build();
+
         when(securityUtil.getLoginMemberId()).thenReturn(memberId);
-        when(answerMapper.findQuestionIdOfMyAnswer(answerId, memberId)).thenReturn(questionId);
-        when(answerMapper.deleteMyAnswerById(answerId, memberId)).thenReturn(0); // 영향 0 → 이미 삭제
+        when(answerRepository.findById(answerId)).thenReturn(Optional.of(mockAnswer));
+        // 삭제 도중 예외 발생 확인 (이미 삭제된 상태 가정)
+        doThrow(new EmptyResultDataAccessException(1)).when(answerRepository).delete(mockAnswer);
 
         // when & then
         assertThatThrownBy(() -> answerService.deleteAnswer(answerId))
@@ -160,10 +166,9 @@ class AnswerServiceImplTest {
                 .matches(ex -> ((QuestionException) ex).getErrorCode() == QuestionErrorCode.ALREADY_DELETED);
 
         verify(securityUtil).getLoginMemberId();
-        verify(answerMapper).findQuestionIdOfMyAnswer(answerId, memberId);
-        verify(answerMapper).deleteMyAnswerById(answerId, memberId);
-        verify(answerMapper, never()).resetQuestionStatusIfNoAnswers(anyLong(), anyString());
-        verifyNoMoreInteractions(answerMapper, securityUtil);
+        verify(answerRepository).findById(answerId);
+        verify(answerRepository).delete(mockAnswer);
+        verifyNoMoreInteractions(answerRepository, questionRepository, securityUtil);
     }
 
     @Test
@@ -172,13 +177,22 @@ class AnswerServiceImplTest {
         Long questionId = 1L;
         AnswerDto dto = new AnswerDto("테스트 답변");
 
+        Question mockQuestion = Question.builder()
+                .id(questionId)
+                .category("DB")
+                .content("질문 내용")
+                .status(AnswerStatus.WAITING)
+                .build();
+
+        when(questionRepository.findById(questionId)).thenReturn(Optional.of(mockQuestion));
+
         doAnswer(invocation -> {
             Answer arg = invocation.getArgument(0);
             Field idField = Answer.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(arg, 123L); // PK 강제 설정
-            return null;
-        }).when(answerMapper).insertAnswer(any(Answer.class));
+            return arg;
+        }).when(answerRepository).save(any(Answer.class));
 
         // when
         answerService.saveAnswer(dto, questionId);
@@ -187,5 +201,7 @@ class AnswerServiceImplTest {
         Awaitility.await().atMost(3, TimeUnit.SECONDS).untilAsserted(() ->
                 verify(eventPublisher, times(1)).publishEvent(any(AnswerSavedEvent.class))
         );
+
+        assertThat(mockQuestion.getStatus()).isEqualTo(AnswerStatus.ANSWERED);
     }
 }

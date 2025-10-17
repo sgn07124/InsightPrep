@@ -1,6 +1,8 @@
 package com.project.InsightPrep.domain.post.entity;
 
 import com.project.InsightPrep.domain.member.entity.Member;
+import com.project.InsightPrep.domain.post.exception.PostErrorCode;
+import com.project.InsightPrep.domain.post.exception.PostException;
 import com.project.InsightPrep.domain.question.entity.Answer;
 import com.project.InsightPrep.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
@@ -53,4 +55,11 @@ public class SharedPost extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PostStatus status = PostStatus.OPEN;
+
+    public void markResolved() {
+        if (this.status == PostStatus.RESOLVED) {
+            throw new PostException(PostErrorCode.ALREADY_RESOLVED);
+        }
+        this.status = PostStatus.RESOLVED;
+    }
 }
